@@ -3,7 +3,7 @@ title: Kuter's Blog
 tagline: The Jekyll Butler
 paginate: 1
 baseurl: ""
-permalink: pretty
+permalink: /:title/
 
 # Gems
 plugins:
