@@ -1,7 +1,6 @@
 # Setup
-title: Poole
+title: Kuter's Blog
 tagline: The Jekyll Butler
-url: https://getpoole.com
 paginate: 1
 baseurl: ""
 permalink: pretty
@@ -30,17 +29,18 @@ pages_list:
   About: '/about'
   Archive: '/archive'
   Feed: '/atom.xml'
+  Github: 'https://github.com/kuterd'
 
+# TODO: Add analytics
 # Options
-
 # Replace this value and uncomment to enable Google Analytics tracking
 # ga_analytics: UA-000000-0
 
 # Specify the author for blog posts
 author:
-  name: Mark Otto
-  url: https://twitter.com/mdo
-  email: markdotto@gmail.com
+  name: Kuter Dinel
+  url: https://githun.com/kuterd
+  email: kuterdinel@gmail.com
 
 # Custom vars
 version: 3.0.0
