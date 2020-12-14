@@ -34,7 +34,7 @@ pages_list:
 # TODO: Add analytics
 # Options
 # Replace this value and uncomment to enable Google Analytics tracking
-# ga_analytics: UA-000000-0
+ga_analytics: GTM-58B863J
 
 # Specify the author for blog posts
 author:
