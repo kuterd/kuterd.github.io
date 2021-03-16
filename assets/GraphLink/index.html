@@ -1,0 +1,88 @@
+<!doctype html>
+
+<html>
+<head>
+<title>GraphLink</title>
+<script src="https://marvl.infotech.monash.edu/webcola/cola.min.js"></script>
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="graphlink.js"></script>
+<style>
+   body, html {
+    margin:0;
+    padding:0;
+    height:100%;
+    overflow:hidden;
+   }
+
+  #left-pane {
+    margin:0;
+    padding-top:5px;
+    padding-left:5px;
+    height:100%;
+    width:250px;
+    display:inline-block;
+    float:left;
+    overflow-y:scroll;
+    overflow-x:hidden;
+    background-color: #efefef;
+  }
+  .tabs {
+    line-height:20px;
+  }
+
+  .tab {
+    padding: 2px 5px 2px 5px;
+    background-color: #afafef;
+    border-radius: 5px;
+    line-height: 30px;
+    white-space:nowrap;
+  }
+  .tab.active {
+    background-color: #5f5fff !important;
+  }
+  .tab-window {
+    display: none;
+  }
+
+  #svg-canvas {
+    position:absolute;
+    left:250px;
+    top:0;
+  }
+
+  </style>
+
+</head>
+
+<body>
+  <div id="left-pane">
+    <div id="tabs">
+      <span class="tab default" data-tab="#datasource-tab">Data Source</span>
+      <span class="tab" data-tab="#nodeinfo-tab" id="node-info-tab-button">Node Info</span>
+      <!--
+        <span class="tab" data-tab="#tbd-tab">Node Visibility</span>
+      -->
+      <span class="tab" data-tab="#statelist-tab">States</span>
+    </div>
+    <div class="tab-window" id="datasource-tab">
+      <input type="file" accept=".json" id="file-input">
+      <span>
+        <h3> Help: </h3>
+        You can go to the next state with the right arrow key.
+        <br>
+        You can drag nodes. Zoom in, out and drag the view.
+      </span>
+    </div>
+    <div class="tab-window" id="nodeinfo-tab"></div>
+    <div class="tab-window" id="tbd-tab">
+      [TBD]
+    </div>
+    <div class="tab-window" id="statelist-tab"></div>
+  </div>
+  <svg id="svg-canvas">
+
+  </svg>
+</body>
+
+
+</html>
