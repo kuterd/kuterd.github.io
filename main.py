@@ -38,9 +38,7 @@ def render_all(general, entries):
         render_page(entry.url, "blog_entry.html", entry_info)
 
 entries = [
-    BlogEntry("Making a very simple static blog generator", "This is a description", "test.md", date.today()),
-    BlogEntry("A entry without description", "", "test.md", date.today()),
-    BlogEntry("Lorem ipsum", "Very descriptive", "lorem-ipsum.md", date.today()),
+    BlogEntry("Hello", "First entry", "hello.md", date(2021, 11, 26)),
 ]
 
-render_all({"author": "Replace Me"}, entries)
+render_all({"author": "Kuter Dinel"}, entries)
