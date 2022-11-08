@@ -1,0 +1,12 @@
+<rss version="2.0" encoding="UTF-8">
+    <title>{{ local.headline.format(author=author) }}</title>
+    {% for entry in entries %}
+        <item>
+                <title>{{entry.title}}</title>
+                {% if entry.description %}
+                <description>{{entry.description}}</description>
+                {% endif %}
+                <link>{{entry.url}}</link>
+        </item>
+    {% endfor %}
+</rss>
