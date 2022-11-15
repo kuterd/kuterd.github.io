@@ -5,10 +5,10 @@
 {% endblock %}
 
 {% block center %}
-        <div style="display:inline-block;float:left">
+        <div id="profile-picture">
            <img width="250px" height="250px" src="profile.jpg"/> 
         </div>
-        <div style="display:inline-block">
+        <div id="entry-tree">
         <ul>
             {% if active_languages.length != 0 %}
             <li> {{local.other_languages}} </li>
@@ -30,7 +30,7 @@
                 <li>Twitter: <a class="highlight" href="https://twitter.com/kuterdinel">@KuterDinel</a></li>
                 <li>Email: <span class="highlight"> kuterdinel [at] gmail.com</span></li>
             </ul>
-            <li>RSS: <a href="{{language["feed_page"]}}">{{local.rss_feed}}</a>
+            <li>RSS: <a class="highlight" href="{{language["feed_page"]}}">{{local.rss_feed}}</a>
             <li>{{ local.blog_entries }}</li>
             <ul>
                 {% for item in entries %}
