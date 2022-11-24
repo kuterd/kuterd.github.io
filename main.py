@@ -95,6 +95,10 @@ def render_all(general, entries):
     for entry in all_entries:
         render_blog_entry(entry)
 
+    render_page_multilang("404.html", "404.html", general, DEFAULT_LANGUAGE)
+
+
+# ------Add-your-blog-posts-here------
 ENTRIES = [
     BlogEntry("Hello", "First entry", "hello.md", date(2021, 11, 26))
 ]
