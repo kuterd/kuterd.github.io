@@ -1,9 +1,10 @@
-from datetime import date
+from datetime import date, datetime
 from jinja2 import Environment, FileSystemLoader
 from os import path
 import markdown
 import copy
 from translation import LANGUAGES
+import subprocess
 
 RENDERED_FOLDER = "result"
 ENTRIES_FOLDER = "entries"
@@ -38,6 +39,12 @@ class BlogEntry:
         self.all_languages = [self]
         self.language = DEFAULT_LANGUAGE
 
+
+def get_git_revision_short_hash():
+    return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
+
+blog_version = get_git_revision_short_hash()
+
 file_loader = FileSystemLoader("templates")
 env = Environment(loader=file_loader)
 env.trim_blocks = True
@@ -45,6 +52,8 @@ env.lstrip_blocks = True
 
 def render_page(file_name, template_name, params):
     print("Rendering page: {}".format(file_name))
+    params["blog_version"] = blog_version
+    params["generation_date"] = datetime.now()
     template = env.get_template(template_name)
     result = template.render(**params)
     rfile = open(path.join(RENDERED_FOLDER, file_name), "w")

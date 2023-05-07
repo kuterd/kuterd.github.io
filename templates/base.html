@@ -16,6 +16,11 @@
                 <h2 style="display:inline;margin:0"><a href="{{languages[language_code].index}}" style="color:white">{{ local.headline.format(author=author) }}</a></h2>
             {% block header %}{% endblock %}
         </div>
-        {% block center %}{% endblock %}
+        <div id="center-content">
+            {% block center %}{% endblock %}
+        </div>
+        <div id='footer'>
+                <span>{{author}} {{ generation_date.strftime('%Y') }} | Last Updated: {{generation_date.strftime('%d-%m-%Y')}} | Blog Commit Hash: {{blog_version}} </span>
+        </div>
     </div>
 </body>
