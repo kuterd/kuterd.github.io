@@ -38,6 +38,7 @@ html, body {
     bottom: 2px;
     font-size: 13px;
 }
+
 #footer * {
     color: #c0c0c0 !important;
 }
@@ -47,7 +48,7 @@ html, body {
 }
 
 #entry-tree {
-    max-width: 700px;
+    max-width: 670px;
     display:inline-block;
     overflow-wrap: break-word;
 }
