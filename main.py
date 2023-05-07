@@ -107,7 +107,7 @@ def render_all(general, entries):
 # ------Add-your-blog-posts-here------
 ENTRIES = [
     BlogEntry(
-        "Joy of programming", "",
+        "Joy of programming", "Becoming a professional & Joy that programming brings",
         "joy-of-programming.md",
         date(2023, 4, 23)
     ),
