@@ -106,14 +106,17 @@ def render_all(general, entries):
 
 # ------Add-your-blog-posts-here------
 ENTRIES = [
+    BlogEntry(
+        "Joy of programming", "",
+        "joy-of-programming.md",
+        date(2023, 4, 23)
+    ),
     {
         'en':  BlogEntry("Hello", "First entry", "hello.md", date(2021, 11, 26)),
         'tr':  BlogEntry("Merhaba", "İlk girdi", "hello-tr.md", date(2022, 12, 27)),
-    }
+    },
 ]
-# ------ Replace with appropriate values ------ 
-# Each entry in this dict is a mapping from a string to either a dict to specify different
-# values for different languages or string to specify the same value for every language.
+
 CONFIG = {
     "author": "Kuter Dinel",
 }
