@@ -32,7 +32,7 @@ class BlogEntry:
         self.content = markdown.markdown(text_content,
             extensions=['codehilite','admonition', 'fenced_code']
         )
-        
+        self.rss_date = date.strftime("%a, %d %b %Y %H:%M:%S %z")        
         self.date = date.strftime("%d-%m-%Y")
         self.url = title.lower().replace(' ', '-') + ".html"
         self.all_languages = [self]

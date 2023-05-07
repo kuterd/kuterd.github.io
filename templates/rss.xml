@@ -3,11 +3,12 @@
         <title>{{ local.headline.format(author=author) }}</title>
     {% for entry in entries %}
         <item>
-                <title>{{entry.title}}</title>
-                {% if entry.description %}
-                <description>{{entry.description}}</description>
-                {% endif %}
-                <link>{{entry.url}}</link>
+            <title>{{entry.title|e}}</title>
+            {% if entry.description %}
+            <description>{{entry.description|e}}</description>
+            {% endif %}
+            <link>{{entry.url}}</link>
+            <pubDate>{{ entry.rss_date}}</pubDate>
         </item>
     {% endfor %}
     </channel>
