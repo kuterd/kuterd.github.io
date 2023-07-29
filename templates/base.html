@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang='{{langauge_code}}'>
 <head>
     <meta name="author" content="{{author}}">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
@@ -16,11 +16,11 @@
                 <h2 style="display:inline;margin:0"><a href="{{languages[language_code].index}}" style="color:white">{{ local.headline.format(author=author) }}</a></h2>
             {% block header %}{% endblock %}
         </div>
-        <div id="center-content">
+        <main id="center-content">
             {% block center %}{% endblock %}
-        </div>
-        <div id='footer'>
+        </main>
+        <footer id='footer'>
                 <span>{{author}} {{ generation_date.strftime('%Y') }} | Last Updated: {{generation_date.strftime('%d-%m-%Y')}} | Blog Commit Hash: {{blog_version}} </span>
-        </div>
+        </footer>
     </div>
 </body>

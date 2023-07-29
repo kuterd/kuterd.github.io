@@ -20,7 +20,9 @@
     <a href="{{languages[language_code].index}}" class="highlight" id="back-button">&crarr; {{local.go_back}}</a>
 {% endblock %}
 {% block center %}
-    <h2> {{entry.title}}</h2>
+    <article>
+    <header>
+    <h1> {{entry.title}}</h1>
     {% if entry.all_languages | length > 1 %}
     {{ local.other_languages }}:
     {% for lang_entry in entry.all_languages %}
@@ -32,8 +34,10 @@
         {{ " / " if not loop.last else "" }}
     {% endfor %}
     {% endif %}
-    <p>
     <i style="float:right;">{{ local.blog_date_author.format(author=author, date=entry.date)}}</i></br>
+    </header>
+    <p>
     {{entry.content}}
     </p>
+    </article>
 {% endblock %} 
