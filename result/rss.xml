@@ -1,0 +1,23 @@
+<rss version="2.0">
+    <channel>
+        <title>Kuter Dinel's blog</title>
+        <item>
+            <title>V8 Bytecode Reference</title>
+            <description>List of V8 bytecode instructions, and their documentation/reference.</description>
+            <link>v8-bytecode-reference.html</link>
+            <pubDate>Sat, 29 Jul 2023 00:00:00 </pubDate>
+        </item>
+        <item>
+            <title>Joy of programming</title>
+            <description>Becoming a professional &amp; Joy that programming brings</description>
+            <link>joy-of-programming.html</link>
+            <pubDate>Sun, 23 Apr 2023 00:00:00 </pubDate>
+        </item>
+        <item>
+            <title>Hello</title>
+            <description>First entry</description>
+            <link>hello.html</link>
+            <pubDate>Fri, 26 Nov 2021 00:00:00 </pubDate>
+        </item>
+    </channel>
+</rss>

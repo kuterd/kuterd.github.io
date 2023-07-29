@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang=''>
+<head>
+    <meta name="author" content="Kuter Dinel">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <style>
+    </style>
+    <link rel="stylesheet" href="highlight.css">
+    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <title> Joy of programming</title>
+    <meta name="description" content="Becoming a professional & Joy that programming brings">
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>   
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+    <div id='center'>
+        <div id="header">
+                <h2 style="display:inline;margin:0"><a href="index.html" style="color:white">Kuter Dinel's blog</a></h2>
+    <a href="index.html" class="highlight" id="back-button">&crarr; Go back</a>
+        </div>
+        <main id="center-content">
+    <article>
+    <header>
+    <h1> Joy of programming</h1>
+    <i style="float:right;">on <strong>23-04-2023</strong> by <strong>Kuter Dinel</strong>.</i></br>
+    </header>
+    <p>
+    <style>
+    button {
+        color: black;
+        background-color: #e0e0e0;
+        border:1px solid black;
+        border-radius: 5px;
+        padding: 3px;
+    }
+
+    button:hover {
+        background-color: #F0F0F0;
+    }
+</style>
+
+<script src="orbit.js"></script>
+<div style="margin: auto; display: block; width:500px;">
+    <canvas id="canvas">Your browser sadly doesn't support canvas elements, sob sob</canvas>
+    <p>
+        <button onclick="load_k_scene()">Load 'K'</button>
+        <button onclick="load_smile()">Load 'Smile'</button>
+        <button onclick="load_orbiting()">Load 'Orbiting Planets'</button>
+    </p>
+    <p style="font-weight: bold">
+        <span style="color:#a5a5a5; ">
+        Very simple simulation of gravity that I made,
+        </span>
+        <span style="color: #7cf2f4; font-style: italic">
+            Try clicking on the canvas and launching particles.
+        </span>
+    </p>
+</div>
+
+<p>When I started programming it was just for my enjoyment, I would sometimes show stuff I made to my friends but I would make whatever I wanted. One of the things that I really enjoyed was making stuff with the HTML5 canvas. Over the years I made things ranging from a bouncing DVD logo to multi-player games. I realized that the more difficult a challenge was, it felt more rewarding at the end. This drove me to try get a deeper understanding of computers.</p>
+<p>More than a decade has passed and as I transition to become a professional  I have to deal with home-works, Jira tickets, tasks, bugs etc and it can tiring sometimes.</p>
+<p>But even after so many years whenever I create something I couldn't the day before, whenever I figure out something I couldn't understand before, it feels the same. I get the same joy from working on more complicated and theoretical projects such as compilers.</p>
+<p>And there is still so many things to learn ... </p>
+<h2>How does the demo above work</h2>
+<p>The gravitational force between two objects is defined as:
+$$F = G\frac{m_1m_2}{r^2}$$</p>
+<p>Where \(G\) is the gravitational constant,\(m_1\) and \(m_2\) are the masses of the objects and \(r\) is the distance between the two objects.
+The direction of the force for both objects is towards each other.</p>
+<p>Essentially when we consider Newton's laws of motion what we get is a system of differential equations(The forces are dependent on the positions and the positions are dependent on the speed is which dependent on the forces). Such a system is not possible to solve analytically for \(n\) many objects.</p>
+<p>I used Euler's method to get an approximate solution. There are better alternatives such as <a href="https://en.wikipedia.org/wiki/Verlet_integration">Verlet-Integration</a> for this problem that give better approximations with the same step size, but since we are just having fun I didn't bother.</p>
+<p>The code to calculate the net force on each object takes \(O(n^2)\) time however there are more efficient algorithms such as the <a href="https://en.wikipedia.org/wiki/Barnes%E2%80%93Hut_simulation">Barnes-Hut Approximation</a> which partition the space and consider particles that are close to each other as a single particle. I didn't felt the need to implement such an algorithm since it runs fast enough on my computer :-) </p>
+    </p>
+    </article>
+        </main>
+        <footer id='footer'>
+                <span>Kuter Dinel 2023 | Last Updated: 29-07-2023 | Blog Commit Hash: 8845396 </span>
+        </footer>
+    </div>
+</body>

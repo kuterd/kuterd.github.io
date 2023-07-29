@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+    http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd
+    http://www.w3.org/1999/xhtml
+    http://www.w3.org/2002/08/xhtml/xhtml1-strict.xsd">
+    <url>
+        <loc>https://kuterdinel.com/v8-bytecode-reference.html</loc>
+    </url>
+    <url>
+        <loc>https://kuterdinel.com/joy-of-programming.html</loc>
+    </url>
+    <url>
+        <loc>https://kuterdinel.com/hello.html</loc>
+    </url>
+    <url>
+        <loc>https://kuterdinel.com/merhaba.html</loc>
+    </url>
+    <url>
+        <loc>https://kuterdinel.com/index.html</loc>
+    </url>
+    <url>
+        <loc>https://kuterdinel.com/index-tr.html</loc>
+    </url>
+ 
+</urlset>
