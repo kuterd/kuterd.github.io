@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang=''>
+<head>
+    <meta name="author" content="Kuter Dinel">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <style>
+    </style>
+    <link rel="stylesheet" href="highlight.css">
+    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <title> V8 Bytecode Reference</title>
+    <meta name="description" content="List of V8 bytecode instructions, and their documentation/reference.">
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>   
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+    <div id='center'>
+        <div id="header">
+                <h2 style="display:inline;margin:0"><a href="index.html" style="color:white">Kuter Dinel's blog</a></h2>
+    <a href="index.html" class="highlight" id="back-button">&crarr; Go back</a>
+        </div>
+        <main id="center-content">
+    <article>
+    <header>
+    <h1> V8 Bytecode Reference</h1>
+    <i style="float:right;">on <strong>29-07-2023</strong> by <strong>Kuter Dinel</strong>.</i></br>
+    </header>
+    <p>
+    <p>Here is a list of bytecode instructions that are used by the V8. JavaScript function gets compiled into bytecode and then gets interpreted by the Ignition interpreter. When there is sufficient feedback, the bytecode gets compiled to efficient native code, either by Turobfan, Turboprop or Maglev.</p>
+<p>Extracted from <code>v8/src/interpreter/interpreter-generator.cc</code></p>
+<h3>LdaZero</h3>
+<p>Load literal '0' into the accumulator.</p>
+<h3>LdaSmi &lt;imm&gt;</h3>
+<p>Load an integer literal into the accumulator as a Smi.</p>
+<h3>LdaConstant &lt;idx&gt;</h3>
+<p>Load constant literal at <strong>idx</strong> in the constant pool into the accumulator.</p>
+<h3>LdaUndefined</h3>
+<p>Load Undefined into the accumulator.</p>
+<h3>LdaNull</h3>
+<p>Load Null into the accumulator.</p>
+<h3>LdaTheHole</h3>
+<p>Load TheHole into the accumulator.</p>
+<h3>LdaTrue</h3>
+<p>Load True into the accumulator.</p>
+<h3>LdaFalse</h3>
+<p>Load False into the accumulator.</p>
+<h3>Ldar &lt;src&gt;</h3>
+<p>Load accumulator with value from register <strong>src</strong>.</p>
+<h3>Star &lt;dst&gt;</h3>
+<p>Store accumulator to register <strong>dst</strong>.</p>
+<h3>Star0 - StarN</h3>
+<p>Store accumulator to one of a special batch of registers, without using a
+second byte to specify the destination.</p>
+<p>Even though this handler is declared as Star0, multiple entries in
+the jump table point to this handler.</p>
+<h3>Mov &lt;src&gt; &lt;dst&gt;</h3>
+<p>Stores the value of register <strong>src</strong> to register <strong>dst</strong>.</p>
+<h3>LdaGlobal &lt;name_index&gt; &lt;slot&gt;</h3>
+<p>Load the global with name in constant pool entry <strong>name_index</strong> into the
+accumulator using FeedBackVector slot <strong>slot</strong> outside of a typeof.</p>
+<h3>LdaGlobalInsideTypeof &lt;name_index&gt; &lt;slot&gt;</h3>
+<p>Load the global with name in constant pool entry <strong>name_index</strong> into the
+accumulator using FeedBackVector slot <strong>slot</strong> inside of a typeof.</p>
+<h3>StaGlobal &lt;name_index&gt; &lt;slot&gt;</h3>
+<p>Store the value in the accumulator into the global with name in constant pool
+entry <strong>name_index</strong> using FeedBackVector slot <strong>slot</strong>.</p>
+<h3>LdaContextSlot &lt;context&gt; &lt;slot_index&gt; &lt;depth&gt;</h3>
+<p>Load the object in <strong>slot_index</strong> of the context at <strong>depth</strong> in the context
+chain starting at <strong>context</strong> into the accumulator.</p>
+<h3>LdaImmutableContextSlot &lt;context&gt; &lt;slot_index&gt; &lt;depth&gt;</h3>
+<p>Load the object in <strong>slot_index</strong> of the context at <strong>depth</strong> in the context
+chain starting at <strong>context</strong> into the accumulator.</p>
+<h3>LdaCurrentContextSlot &lt;slot_index&gt;</h3>
+<p>Load the object in <strong>slot_index</strong> of the current context into the accumulator.</p>
+<h3>LdaImmutableCurrentContextSlot &lt;slot_index&gt;</h3>
+<p>Load the object in <strong>slot_index</strong> of the current context into the accumulator.</p>
+<h3>StaContextSlot &lt;context&gt; &lt;slot_index&gt; &lt;depth&gt;</h3>
+<p>Stores the object in the accumulator into <strong>slot_index</strong> of the context at
+<strong>depth</strong> in the context chain starting at <strong>context</strong>.</p>
+<h3>StaCurrentContextSlot &lt;slot_index&gt;</h3>
+<p>Stores the object in the accumulator into <strong>slot_index</strong> of the current
+context.</p>
+<h3>LdaLookupSlot &lt;name_index&gt;</h3>
+<p>Lookup the object with the name in constant pool entry <strong>name_index</strong>
+dynamically.</p>
+<h3>LdaLookupSlotInsideTypeof &lt;name_index&gt;</h3>
+<p>Lookup the object with the name in constant pool entry <strong>name_index</strong>
+dynamically without causing a NoReferenceError.</p>
+<h3>LdaLookupContextSlot &lt;name_index&gt;</h3>
+<p>Lookup the object with the name in constant pool entry <strong>name_index</strong>
+dynamically.</p>
+<h3>LdaLookupContextSlotInsideTypeof &lt;name_index&gt;</h3>
+<p>Lookup the object with the name in constant pool entry <strong>name_index</strong>
+dynamically without causing a NoReferenceError.</p>
+<h3>LdaLookupGlobalSlot &lt;name_index&gt; &lt;feedback_slot&gt; &lt;depth&gt;</h3>
+<p>Lookup the object with the name in constant pool entry <strong>name_index</strong>
+dynamically.</p>
+<h3>LdaLookupGlobalSlotInsideTypeof &lt;name_index&gt; &lt;feedback_slot&gt; &lt;depth&gt;</h3>
+<p>Lookup the object with the name in constant pool entry <strong>name_index</strong>
+dynamically without causing a NoReferenceError.</p>
+<h3>StaLookupSlot &lt;name_index&gt; &lt;flags&gt;</h3>
+<p>Store the object in accumulator to the object with the name in constant
+pool entry <strong>name_index</strong>.</p>
+<h3>GetNamedProperty &lt;object&gt; &lt;name_index&gt; &lt;slot&gt;</h3>
+<p>Calls the LoadIC at FeedBackVector slot <strong>slot</strong> for <strong>object</strong> and the name at
+constant pool entry <strong>name_index</strong>.</p>
+<h3>GetNamedPropertyFromSuper &lt;receiver&gt; &lt;name_index&gt; &lt;slot&gt;</h3>
+<p>Calls the LoadSuperIC at FeedBackVector slot <strong>slot</strong> for <strong>receiver</strong>, home
+object's prototype (home object in the accumulator) and the name at constant
+pool entry <strong>name_index</strong>.</p>
+<h3>GetKeyedProperty &lt;object&gt; &lt;slot&gt;</h3>
+<p>Calls the KeyedLoadIC at FeedBackVector slot <strong>slot</strong> for <strong>object</strong> and the key
+in the accumulator.</p>
+<h3>SetNamedProperty &lt;object&gt; &lt;name_index&gt; &lt;slot&gt;</h3>
+<p>Calls the StoreIC at FeedBackVector slot <strong>slot</strong> for <strong>object</strong> and
+the name in constant pool entry <strong>name_index</strong> with the value in the
+accumulator.</p>
+<h3>DefineNamedOwnProperty &lt;object&gt; &lt;name_index&gt; &lt;slot&gt;</h3>
+<p>Calls the DefineNamedOwnIC at FeedBackVector slot <strong>slot</strong> for <strong>object</strong> and
+the name in constant pool entry <strong>name_index</strong> with the value in the
+accumulator.</p>
+<h3>SetKeyedProperty &lt;object&gt; &lt;key&gt; &lt;slot&gt;</h3>
+<p>Calls the KeyedStoreIC at FeedbackVector slot <strong>slot</strong> for <strong>object</strong> and
+the key <strong>key</strong> with the value in the accumulator. This could trigger
+the setter and the set traps if necessary.</p>
+<h3>DefineKeyedOwnProperty &lt;object&gt; &lt;key&gt; &lt;flags&gt; &lt;slot&gt;</h3>
+<p>Calls the DefineKeyedOwnIC at FeedbackVector slot <strong>slot</strong> for <strong>object</strong> and
+the key <strong>key</strong> with the value in the accumulator. Whether set_function_name
+is stored in DefineKeyedOwnPropertyFlags <strong>flags</strong>.</p>
+<p>This is similar to SetKeyedProperty, but avoids checking the prototype
+chain, and in the case of private names, throws if the private name already
+exists.</p>
+<h3>StaInArrayLiteral &lt;array&gt; &lt;index&gt; &lt;slot&gt;</h3>
+<p>Calls the StoreInArrayLiteralIC at FeedbackVector slot <strong>slot</strong> for <strong>array</strong> and
+the key <strong>index</strong> with the value in the accumulator.</p>
+<h3>DefineKeyedOwnPropertyInLiteral &lt;object&gt; &lt;name&gt; &lt;flags&gt; &lt;slot&gt;</h3>
+<p>Define a property <strong>name</strong> with value from the accumulator in <strong>object</strong>.
+Property attributes and whether set_function_name are stored in
+DefineKeyedOwnPropertyInLiteralFlags <strong>flags</strong>.</p>
+<p>This definition is not observable and is used only for definitions
+in object or class literals.</p>
+<h3>LdaModuleVariable &lt;cell_index&gt; &lt;depth&gt;</h3>
+<p>Load the contents of a module variable into the accumulator.  The variable is
+identified by <strong>cell_index</strong>.  <strong>depth</strong> is the depth of the current context
+relative to the module context.</p>
+<h3>StaModuleVariable &lt;cell_index&gt; &lt;depth&gt;</h3>
+<p>Store accumulator to the module variable identified by <strong>cell_index</strong>.
+<strong>depth</strong> is the depth of the current context relative to the module context.</p>
+<h3>PushContext &lt;context&gt;</h3>
+<p>Saves the current context in <strong>context</strong>, and pushes the accumulator as the
+new current context.</p>
+<h3>PopContext &lt;context&gt;</h3>
+<p>Pops the current context and sets <strong>context</strong> as the new context.</p>
+<h3>Add &lt;src&gt;</h3>
+<p>Add register <strong>src</strong> to accumulator.</p>
+<h3>Sub &lt;src&gt;</h3>
+<p>Subtract register <strong>src</strong> from accumulator.</p>
+<h3>Mul &lt;src&gt;</h3>
+<p>Multiply accumulator by register <strong>src</strong>.</p>
+<h3>Div &lt;src&gt;</h3>
+<p>Divide register <strong>src</strong> by accumulator.</p>
+<h3>Mod &lt;src&gt;</h3>
+<p>Modulo register <strong>src</strong> by accumulator.</p>
+<h3>Exp &lt;src&gt;</h3>
+<p>Exponentiate register <strong>src</strong> (base) with accumulator (exponent).</p>
+<h3>AddSmi &lt;imm&gt;</h3>
+<p>Adds an immediate value <strong>imm</strong> to the value in the accumulator.</p>
+<h3>SubSmi &lt;imm&gt;</h3>
+<p>Subtracts an immediate value <strong>imm</strong> from the value in the accumulator.</p>
+<h3>MulSmi &lt;imm&gt;</h3>
+<p>Multiplies an immediate value <strong>imm</strong> to the value in the accumulator.</p>
+<h3>DivSmi &lt;imm&gt;</h3>
+<p>Divides the value in the accumulator by immediate value <strong>imm</strong>.</p>
+<h3>ModSmi &lt;imm&gt;</h3>
+<p>Modulo accumulator by immediate value <strong>imm</strong>.</p>
+<h3>ExpSmi &lt;imm&gt;</h3>
+<p>Exponentiate accumulator (base) with immediate value <strong>imm</strong> (exponent).</p>
+<h3>BitwiseOr &lt;src&gt;</h3>
+<p>BitwiseOr register <strong>src</strong> to accumulator.</p>
+<h3>BitwiseXor &lt;src&gt;</h3>
+<p>BitwiseXor register <strong>src</strong> to accumulator.</p>
+<h3>BitwiseAnd &lt;src&gt;</h3>
+<p>BitwiseAnd register <strong>src</strong> to accumulator.</p>
+<h3>ShiftLeft &lt;src&gt;</h3>
+<p>Left shifts register <strong>src</strong> by the count specified in the accumulator.
+Register <strong>src</strong> is converted to an int32 and the accumulator to uint32
+before the operation. 5 lsb bits from the accumulator are used as count
+i.e. <strong>src</strong> &lt;&lt; (accumulator &amp; 0x1F).</p>
+<h3>ShiftRight &lt;src&gt;</h3>
+<p>Right shifts register <strong>src</strong> by the count specified in the accumulator.
+Result is sign extended. Register <strong>src</strong> is converted to an int32 and the
+accumulator to uint32 before the operation. 5 lsb bits from the accumulator
+are used as count i.e. <strong>src</strong> &gt;&gt; (accumulator &amp; 0x1F).</p>
+<h3>ShiftRightLogical &lt;src&gt;</h3>
+<p>Right Shifts register <strong>src</strong> by the count specified in the accumulator.
+Result is zero-filled. The accumulator and register <strong>src</strong> are converted to
+uint32 before the operation 5 lsb bits from the accumulator are used as
+count i.e. <strong>src</strong> &lt;&lt; (accumulator &amp; 0x1F).</p>
+<h3>BitwiseOrSmi &lt;imm&gt;</h3>
+<p>BitwiseOrSmi accumulator with <strong>imm</strong>.</p>
+<h3>BitwiseXorSmi &lt;imm&gt;</h3>
+<p>BitwiseXorSmi accumulator with <strong>imm</strong>.</p>
+<h3>BitwiseAndSmi &lt;imm&gt;</h3>
+<p>BitwiseAndSmi accumulator with <strong>imm</strong>.</p>
+<h3>BitwiseNot &lt;feedback_slot&gt;</h3>
+<p>Perform bitwise-not on the accumulator.</p>
+<h3>ShiftLeftSmi &lt;imm&gt;</h3>
+<p>Left shifts accumulator by the count specified in <strong>imm</strong>.
+The accumulator is converted to an int32 before the operation. The 5
+lsb bits from <strong>imm</strong> are used as count i.e. <strong>src</strong> <strong>&lt; (&lt;imm</strong> &amp; 0x1F).</p>
+<h3>ShiftRightSmi &lt;imm&gt;</h3>
+<p>Right shifts accumulator by the count specified in <strong>imm</strong>. Result is sign
+extended. The accumulator is converted to an int32 before the operation. The
+5 lsb bits from <strong>imm</strong> are used as count i.e. <strong>src</strong> &gt;&gt; (<strong>imm</strong> &amp; 0x1F).</p>
+<h3>ShiftRightLogicalSmi &lt;imm&gt;</h3>
+<p>Right shifts accumulator by the count specified in <strong>imm</strong>. Result is zero
+extended. The accumulator is converted to an int32 before the operation. The
+5 lsb bits from <strong>imm</strong> are used as count i.e. <strong>src</strong> &gt;&gt;&gt; (<strong>imm</strong> &amp; 0x1F).</p>
+<h3>Negate &lt;feedback_slot&gt;</h3>
+<p>Perform arithmetic negation on the accumulator.</p>
+<h3>ToName &lt;dst&gt;</h3>
+<p>Convert the object referenced by the accumulator to a name.</p>
+<h3>ToNumber &lt;slot&gt;</h3>
+<p>Convert the object referenced by the accumulator to a number.</p>
+<h3>ToNumeric &lt;slot&gt;</h3>
+<p>Convert the object referenced by the accumulator to a numeric.</p>
+<h3>ToObject &lt;dst&gt;</h3>
+<p>Convert the object referenced by the accumulator to a JSReceiver.</p>
+<h3>ToString</h3>
+<p>Convert the accumulator to a String.</p>
+<h3>ToString</h3>
+<p>Convert the accumulator to a String.</p>
+<h3>Inc</h3>
+<p>Increments value in the accumulator by one.</p>
+<h3>Dec</h3>
+<p>Decrements value in the accumulator by one.</p>
+<h3>ToBooleanLogicalNot</h3>
+<p>Perform logical-not on the accumulator, first casting the
+accumulator to a boolean value if required.</p>
+<h3>LogicalNot</h3>
+<p>Perform logical-not on the accumulator, which must already be a boolean
+value.</p>
+<h3>TypeOf</h3>
+<p>Load the accumulator with the string representating type of the
+object in the accumulator.</p>
+<h3>DeletePropertyStrict</h3>
+<p>Delete the property specified in the accumulator from the object
+referenced by the register operand following strict mode semantics.</p>
+<h3>DeletePropertySloppy</h3>
+<p>Delete the property specified in the accumulator from the object
+referenced by the register operand following sloppy mode semantics.</p>
+<h3>GetSuperConstructor</h3>
+<p>Get the super constructor from the object referenced by the accumulator.
+The result is stored in register <strong>reg</strong>.</p>
+<h3>Call &lt;callable&gt; &lt;receiver&gt; &lt;arg_count&gt; &lt;feedback_slot_id&gt;</h3>
+<p>Call a JSfunction or Callable in <strong>callable</strong> with the <strong>receiver</strong> and
+<strong>arg_count</strong> arguments in subsequent registers. Collect type feedback
+into <strong>feedback_slot_id</strong></p>
+<h3>CallProperty</h3>
+<h3>CallProperty0</h3>
+<h3>CallProperty1</h3>
+<h3>CallProperty2</h3>
+<h3>CallUndefinedReceiver</h3>
+<h3>CallUndefinedReceiver0</h3>
+<h3>CallUndefinedReceiver1</h3>
+<h3>CallUndefinedReceiver2</h3>
+<h3>CallRuntime &lt;function_id&gt; &lt;first_arg&gt; &lt;arg_count&gt;</h3>
+<p>Call the runtime function <strong>function_id</strong> with the first argument in
+register <strong>first_arg</strong> and <strong>arg_count</strong> arguments in subsequent
+registers.</p>
+<h3>InvokeIntrinsic &lt;function_id&gt; &lt;first_arg&gt; &lt;arg_count&gt;</h3>
+<p>Implements the semantic equivalent of calling the runtime function
+<strong>function_id</strong> with the first argument in <strong>first_arg</strong> and <strong>arg_count</strong>
+arguments in subsequent registers.</p>
+<h3>CallRuntimeForPair &lt;function_id&gt; &lt;first_arg&gt; &lt;arg_count&gt; &lt;first_return&gt;</h3>
+<p>Call the runtime function <strong>function_id</strong> which returns a pair, with the
+first argument in register <strong>first_arg</strong> and <strong>arg_count</strong> arguments in
+subsequent registers. Returns the result in <strong>first_return</strong> and
+<strong>first_return + 1</strong></p>
+<h3>CallJSRuntime &lt;context_index&gt; &lt;receiver&gt; &lt;arg_count&gt;</h3>
+<p>Call the JS runtime function that has the <strong>context_index</strong> with the receiver
+in register <strong>receiver</strong> and <strong>arg_count</strong> arguments in subsequent registers.</p>
+<h3>CallWithSpread &lt;callable&gt; &lt;first_arg&gt; &lt;arg_count&gt;</h3>
+<p>Call a JSfunction or Callable in <strong>callable</strong> with the receiver in
+<strong>first_arg</strong> and <strong>arg_count - 1</strong> arguments in subsequent registers. The
+final argument is always a spread.</p>
+<h3>ConstructWithSpread &lt;first_arg&gt; &lt;arg_count&gt;</h3>
+<p>Call the constructor in <strong>constructor</strong> with the first argument in register
+<strong>first_arg</strong> and <strong>arg_count</strong> arguments in subsequent registers. The final
+argument is always a spread. The new.target is in the accumulator.</p>
+<h3>Construct &lt;constructor&gt; &lt;first_arg&gt; &lt;arg_count&gt;</h3>
+<p>Call operator construct with <strong>constructor</strong> and the first argument in
+register <strong>first_arg</strong> and <strong>arg_count</strong> arguments in subsequent
+registers. The new.target is in the accumulator.</p>
+<h3>TestEqual &lt;src&gt;</h3>
+<p>Test if the value in the <strong>src</strong> register equals the accumulator.</p>
+<h3>TestEqualStrict &lt;src&gt;</h3>
+<p>Test if the value in the <strong>src</strong> register is strictly equal to the accumulator.</p>
+<h3>TestLessThan &lt;src&gt;</h3>
+<p>Test if the value in the <strong>src</strong> register is less than the accumulator.</p>
+<h3>TestGreaterThan &lt;src&gt;</h3>
+<p>Test if the value in the <strong>src</strong> register is greater than the accumulator.</p>
+<h3>TestLessThanOrEqual &lt;src&gt;</h3>
+<p>Test if the value in the <strong>src</strong> register is less than or equal to the
+accumulator.</p>
+<h3>TestGreaterThanOrEqual &lt;src&gt;</h3>
+<p>Test if the value in the <strong>src</strong> register is greater than or equal to the
+accumulator.</p>
+<h3>TestReferenceEqual &lt;src&gt;</h3>
+<p>Test if the value in the <strong>src</strong> register is equal to the accumulator
+by means of simple comparison. For SMIs and simple reference comparisons.</p>
+<h3>TestIn &lt;src&gt; &lt;feedback_slot&gt;</h3>
+<p>Test if the object referenced by the register operand is a property of the
+object referenced by the accumulator.</p>
+<h3>TestInstanceOf &lt;src&gt; &lt;feedback_slot&gt;</h3>
+<p>Test if the object referenced by the <strong>src</strong> register is an an instance of type
+referenced by the accumulator.</p>
+<h3>TestUndetectable</h3>
+<p>Test if the value in the accumulator is undetectable (null, undefined or
+document.all).</p>
+<h3>TestNull</h3>
+<p>Test if the value in accumulator is strictly equal to null.</p>
+<h3>TestUndefined</h3>
+<p>Test if the value in the accumulator is strictly equal to undefined.</p>
+<h3>TestTypeOf &lt;literal_flag&gt;</h3>
+<p>Tests if the object in the <strong>accumulator</strong> is typeof the literal represented
+by <strong>literal_flag</strong>.</p>
+<h3>Jump &lt;imm&gt;</h3>
+<p>Jump by the number of bytes represented by the immediate operand <strong>imm</strong>.</p>
+<h3>JumpConstant &lt;idx&gt;</h3>
+<p>Jump by the number of bytes in the Smi in the <strong>idx</strong> entry in the constant
+pool.</p>
+<h3>JumpIfTrue &lt;imm&gt;</h3>
+<p>Jump by the number of bytes represented by an immediate operand if the
+accumulator contains true. This only works for boolean inputs, and
+will misbehave if passed arbitrary input values.</p>
+<h3>JumpIfTrueConstant &lt;idx&gt;</h3>
+<p>Jump by the number of bytes in the Smi in the <strong>idx</strong> entry in the constant
+pool if the accumulator contains true. This only works for boolean inputs,
+and will misbehave if passed arbitrary input values.</p>
+<h3>JumpIfFalse &lt;imm&gt;</h3>
+<p>Jump by the number of bytes represented by an immediate operand if the
+accumulator contains false. This only works for boolean inputs, and
+will misbehave if passed arbitrary input values.</p>
+<h3>JumpIfFalseConstant &lt;idx&gt;</h3>
+<p>Jump by the number of bytes in the Smi in the <strong>idx</strong> entry in the constant
+pool if the accumulator contains false. This only works for boolean inputs,
+and will misbehave if passed arbitrary input values.</p>
+<h3>JumpIfToBooleanTrue &lt;imm&gt;</h3>
+<p>Jump by the number of bytes represented by an immediate operand if the object
+referenced by the accumulator is true when the object is cast to boolean.</p>
+<h3>JumpIfToBooleanTrueConstant &lt;idx&gt;</h3>
+<p>Jump by the number of bytes in the Smi in the <strong>idx</strong> entry in the constant
+pool if the object referenced by the accumulator is true when the object is
+cast to boolean.</p>
+<h3>JumpIfToBooleanFalse &lt;imm&gt;</h3>
+<p>Jump by the number of bytes represented by an immediate operand if the object
+referenced by the accumulator is false when the object is cast to boolean.</p>
+<h3>JumpIfToBooleanFalseConstant &lt;idx&gt;</h3>
+<p>Jump by the number of bytes in the Smi in the <strong>idx</strong> entry in the constant
+pool if the object referenced by the accumulator is false when the object is
+cast to boolean.</p>
+<h3>JumpIfNull &lt;imm&gt;</h3>
+<p>Jump by the number of bytes represented by an immediate operand if the object
+referenced by the accumulator is the null constant.</p>
+<h3>JumpIfNullConstant &lt;idx&gt;</h3>
+<p>Jump by the number of bytes in the Smi in the <strong>idx</strong> entry in the constant
+pool if the object referenced by the accumulator is the null constant.</p>
+<h3>JumpIfNotNull &lt;imm&gt;</h3>
+<p>Jump by the number of bytes represented by an immediate operand if the object
+referenced by the accumulator is not the null constant.</p>
+<h3>JumpIfNotNullConstant &lt;idx&gt;</h3>
+<p>Jump by the number of bytes in the Smi in the <strong>idx</strong> entry in the constant
+pool if the object referenced by the accumulator is not the null constant.</p>
+<h3>JumpIfUndefined &lt;imm&gt;</h3>
+<p>Jump by the number of bytes represented by an immediate operand if the object
+referenced by the accumulator is the undefined constant.</p>
+<h3>JumpIfUndefinedConstant &lt;idx&gt;</h3>
+<p>Jump by the number of bytes in the Smi in the <strong>idx</strong> entry in the constant
+pool if the object referenced by the accumulator is the undefined constant.</p>
+<h3>JumpIfNotUndefined &lt;imm&gt;</h3>
+<p>Jump by the number of bytes represented by an immediate operand if the object
+referenced by the accumulator is not the undefined constant.</p>
+<h3>JumpIfNotUndefinedConstant &lt;idx&gt;</h3>
+<p>Jump by the number of bytes in the Smi in the <strong>idx</strong> entry in the constant
+pool if the object referenced by the accumulator is not the undefined
+constant.</p>
+<h3>JumpIfUndefinedOrNull &lt;imm&gt;</h3>
+<p>Jump by the number of bytes represented by an immediate operand if the object
+referenced by the accumulator is the undefined constant or the null constant.</p>
+<h3>JumpIfUndefinedOrNullConstant &lt;idx&gt;</h3>
+<p>Jump by the number of bytes in the Smi in the <strong>idx</strong> entry in the constant
+pool if the object referenced by the accumulator is the undefined constant or
+the null constant.</p>
+<h3>JumpIfJSReceiver &lt;imm&gt;</h3>
+<p>Jump by the number of bytes represented by an immediate operand if the object
+referenced by the accumulator is a JSReceiver.</p>
+<h3>JumpIfJSReceiverConstant &lt;idx&gt;</h3>
+<p>Jump by the number of bytes in the Smi in the <strong>idx</strong> entry in the constant
+pool if the object referenced by the accumulator is a JSReceiver.</p>
+<h3>JumpLoop &lt;imm&gt; &lt;loop_depth&gt;</h3>
+<p>Jump by the number of bytes represented by the immediate operand <strong>imm</strong>. Also
+performs a loop nesting check, a stack check, and potentially triggers OSR.</p>
+<h3>SwitchOnSmiNoFeedback &lt;table_start&gt; &lt;table_length&gt; &lt;case_value_base&gt;</h3>
+<p>Jump by the number of bytes defined by a Smi in a table in the constant pool,
+where the table starts at <strong>table_start</strong> and has <strong>table_length</strong> entries.
+The table is indexed by the accumulator, minus <strong>case_value_base</strong>. If the
+case_value falls outside of the table <strong>table_length</strong>, fall-through to the
+next bytecode.</p>
+<h3>CreateRegExpLiteral &lt;pattern_idx&gt; &lt;literal_idx&gt; &lt;flags&gt;</h3>
+<p>Creates a regular expression literal for literal index <strong>literal_idx</strong> with
+<strong>flags</strong> and the pattern in <strong>pattern_idx</strong>.</p>
+<h3>CreateArrayLiteral &lt;element_idx&gt; &lt;literal_idx&gt; &lt;flags&gt;</h3>
+<p>Creates an array literal for literal index <strong>literal_idx</strong> with
+CreateArrayLiteral flags <strong>flags</strong> and constant elements in <strong>element_idx</strong>.</p>
+<h3>CreateEmptyArrayLiteral &lt;literal_idx&gt;</h3>
+<p>Creates an empty JSArray literal for literal index <strong>literal_idx</strong>.</p>
+<h3>CreateArrayFromIterable</h3>
+<p>Spread the given iterable from the accumulator into a new JSArray.
+TODO(neis): Turn this into an intrinsic when we're running out of bytecodes.</p>
+<h3>CreateObjectLiteral &lt;element_idx&gt; &lt;literal_idx&gt; &lt;flags&gt;</h3>
+<p>Creates an object literal for literal index <strong>literal_idx</strong> with
+CreateObjectLiteralFlags <strong>flags</strong> and constant elements in <strong>element_idx</strong>.</p>
+<h3>CreateEmptyObjectLiteral</h3>
+<p>Creates an empty JSObject literal.</p>
+<h3>CloneObject &lt;source_idx&gt; &lt;flags&gt; &lt;feedback_slot&gt;</h3>
+<p>Allocates a new JSObject with each enumerable own property copied from
+{source}, converting getters into data properties.</p>
+<h3>GetTemplateObject &lt;descriptor_idx&gt; &lt;literal_idx&gt;</h3>
+<p>Creates the template to pass for tagged templates and returns it in the
+accumulator, creating and caching the site object on-demand as per the
+specification.</p>
+<h3>CreateClosure &lt;index&gt; &lt;slot&gt; &lt;flags&gt;</h3>
+<p>Creates a new closure for SharedFunctionInfo at position <strong>index</strong> in the
+constant pool and with pretenuring controlled by <strong>flags</strong>.</p>
+<h3>CreateBlockContext &lt;index&gt;</h3>
+<p>Creates a new block context with the scope info constant at <strong>index</strong>.</p>
+<h3>CreateCatchContext &lt;exception&gt; &lt;scope_info_idx&gt;</h3>
+<p>Creates a new context for a catch block with the <strong>exception</strong> in a register
+and the ScopeInfo at <strong>scope_info_idx</strong>.</p>
+<h3>CreateFunctionContext &lt;scope_info_idx&gt; &lt;slots&gt;</h3>
+<p>Creates a new context with number of <strong>slots</strong> for the function closure.</p>
+<h3>CreateEvalContext &lt;scope_info_idx&gt; &lt;slots&gt;</h3>
+<p>Creates a new context with number of <strong>slots</strong> for an eval closure.</p>
+<h3>CreateWithContext &lt;register&gt; &lt;scope_info_idx&gt;</h3>
+<p>Creates a new context with the ScopeInfo at <strong>scope_info_idx</strong> for a
+with-statement with the object in <strong>register</strong>.</p>
+<h3>CreateMappedArguments</h3>
+<p>Creates a new mapped arguments object.</p>
+<h3>CreateUnmappedArguments</h3>
+<p>Creates a new unmapped arguments object.</p>
+<h3>CreateRestParameter</h3>
+<p>Creates a new rest parameter array.</p>
+<h3>SetPendingMessage</h3>
+<p>Sets the pending message to the value in the accumulator, and returns the
+previous pending message in the accumulator.</p>
+<h3>Throw</h3>
+<p>Throws the exception in the accumulator.</p>
+<h3>ReThrow</h3>
+<p>Re-throws the exception in the accumulator.</p>
+<h3>Abort &lt;abort_reason&gt;</h3>
+<p>Aborts execution (via a call to the runtime function).</p>
+<h3>Return</h3>
+<p>Return the value in the accumulator.</p>
+<h3>ThrowReferenceErrorIfHole &lt;variable_name&gt;</h3>
+<p>Throws an exception if the value in the accumulator is TheHole.</p>
+<h3>ThrowSuperNotCalledIfHole</h3>
+<p>Throws an exception if the value in the accumulator is TheHole.</p>
+<h3>ThrowSuperAlreadyCalledIfNotHole</h3>
+<p>Throws SuperAlreadyCalled exception if the value in the accumulator is not
+TheHole.</p>
+<h3>ThrowIfNotSuperConstructor &lt;constructor&gt;</h3>
+<p>Throws an exception if the value in <strong>constructor</strong> is not in fact a
+constructor.</p>
+<h3>FindNonDefaultConstructorOrConstruct &lt;this_function&gt; &lt;new_target&gt; &lt;output&gt;</h3>
+<p>Walks the prototype chain from <strong>this_function</strong>'s super ctor until we see a
+non-default ctor. If the walk ends at a default base ctor, creates an
+instance and stores it in <strong>output[1]</strong> and stores true into output[0].
+Otherwise, stores the first non-default ctor into <strong>output[1]</strong> and false into
+<strong>output[0]</strong>.</p>
+<h3>Debugger</h3>
+<p>Call runtime to handle debugger statement.</p>
+<h3>IncBlockCounter &lt;slot&gt;</h3>
+<p>Increment the execution count for the given slot. Used for block code
+coverage.</p>
+<h3>ForInEnumerate &lt;receiver&gt;</h3>
+<p>Enumerates the enumerable keys of the <strong>receiver</strong> and either returns the
+map of the <strong>receiver</strong> if it has a usable enum cache or a fixed array
+with the keys to enumerate in the accumulator.</p>
+<h3>ForInPrepare &lt;cache_info_triple&gt;</h3>
+<p>Returns state for for..in loop execution based on the enumerator in
+the accumulator register, which is the result of calling ForInEnumerate
+on a JSReceiver object.
+The result is output in registers <strong>cache_info_triple</strong> to
+<strong>cache_info_triple + 2</strong>, with the registers holding cache_type, cache_array,
+and cache_length respectively.</p>
+<h3>ForInNext &lt;receiver&gt; &lt;index&gt; &lt;cache_info_pair&gt;</h3>
+<p>Returns the next enumerable property in the the accumulator.</p>
+<h3>ForInContinue &lt;index&gt; &lt;cache_length&gt;</h3>
+<p>Returns false if the end of the enumerable properties has been reached.</p>
+<h3>ForInStep &lt;index&gt;</h3>
+<p>Increments the loop counter in register <strong>index</strong> and stores the result
+in the accumulator.</p>
+<h3>GetIterator &lt;object&gt;</h3>
+<p>Retrieves the object[Symbol.iterator] method, calls it and stores
+the result in the accumulator. If the result is not JSReceiver,
+throw SymbolIteratorInvalid runtime exception.</p>
+<h3>Wide</h3>
+<p>Prefix bytecode indicating next bytecode has wide (16-bit) operands.</p>
+<h3>ExtraWide</h3>
+<p>Prefix bytecode indicating next bytecode has extra-wide (32-bit) operands.</p>
+<h3>Illegal</h3>
+<p>An invalid bytecode aborting execution if dispatched.</p>
+<h3>SuspendGenerator &lt;generator&gt; &lt;first input register&gt; &lt;register count&gt; &lt;suspend_id&gt;</h3>
+<p>Stores the parameters and the register file in the generator. Also stores
+the current context, <strong>suspend_id</strong>, and the current bytecode offset
+(for debugging purposes) into the generator. Then, returns the value
+in the accumulator.</p>
+<h3>SwitchOnGeneratorState &lt;generator&gt; &lt;table_start&gt; &lt;table_length&gt;</h3>
+<p>If <strong>generator</strong> is undefined, falls through. Otherwise, loads the
+generator's state (overwriting it with kGeneratorExecuting), sets the context
+to the generator's resume context, and performs state dispatch on the
+generator's state by looking up the generator state in a jump table in the
+constant pool, starting at <strong>table_start</strong>, and of length <strong>table_length</strong>.</p>
+<h3>ResumeGenerator &lt;generator&gt; &lt;first output register&gt; &lt;register count&gt;</h3>
+<p>Imports the register file stored in the generator and marks the generator
+state as executing.</p>
+    </p>
+    </article>
+        </main>
+        <footer id='footer'>
+                <span>Kuter Dinel 2023 | Last Updated: 29-07-2023 | Blog Commit Hash: 8845396 </span>
+        </footer>
+    </div>
+</body>
