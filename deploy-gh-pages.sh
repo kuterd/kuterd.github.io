@@ -1,6 +1,7 @@
 #!/bin/bash
 
 #Simple script for deploying this blog to github pages.
+python main.py
 git add result
 
 git commit -m "Subtree"
