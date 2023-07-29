@@ -31,25 +31,27 @@
             </ul>
             <li>RSS: <a class="highlight" href="{{language["feed_page"]}}">{{local.rss_feed}}</a>
             {% if language_code == 'en' %}
-                <li>About me</li>
-                <dd>
-                I was a SWE intern at Google in 2022, before that I participated in <a href="https://summerofcode.withgoogle.com/" title="Google Summer of Code">GSoC</a> with the <a href="https://llvm.org/">LLVM</a> Foundation in 2021 & 2020.
-                <br><br>Some of my interests include; <i>compilers</i>, <i>deep learning</i> and <i>web security</i>.
-                </dd>
+                <li>About me<br>
+                <ul class="no-bullet">
+                    <li>
+                    I was a SWE intern at Google in 2022, before that I participated in <a href="https://summerofcode.withgoogle.com/" title="Google Summer of Code">GSoC</a> with the <a href="https://llvm.org/">LLVM</a> Foundation in 2021 & 2020.
+                    <br><br>Some of my interests include; <i>compilers</i>, <i>deep learning</i> and <i>web security</i>.
+                    </li>
+                </ul>
             {% elif language_code == 'tr'  %}
-                <li>Hakkımda</li>
-                <dd>
-                2022'de Google'da staj yaptım, daha öncesinde <a href="https://llvm.org/">LLVM</a> Vakfı ile 2021 ve 2020 yıllarında <a href="https://summerofcode.withgoogle.com/" title="Google Summer of Code">GSoC</a>'a katılmıştım.
-
-                <br><br>Bazı ilgi alanlarım arasında; <i>derleyiciler</i>, <i>derin öğrenme</i> ve <i>web güvenliği</i> bulunmaktadır.
-                </dd>
+                <li>Hakkımda <br>
+                <ul class="no-bullet">
+                    <li>
+                    2022'de Google'da staj yaptım, daha öncesinde <a href="https://llvm.org/">LLVM</a> Vakfı ile 2021 ve 2020 yıllarında <a href="https://summerofcode.withgoogle.com/" title="Google Summer of Code">GSoC</a>'a katılmıştım.
+                    <br><br>Bazı ilgi alanlarım arasında; <i>derleyiciler</i>, <i>derin öğrenme</i> ve <i>web güvenliği</i> bulunmaktadır.
+                    </li>
+                </ul>
             {% endif %}
             
             <li>{{ local.blog_entries }}</li>
             <ul>
                 {% for item in entries %}
                 <li><strong>{{item.date}}</strong> - <a href="{{item.url}}">{{item.title}}</a>
-
                 {% if item.all_languages | length > 1 %}
                 (
                 {% for lang_entry in item.all_languages %}
@@ -60,13 +62,15 @@
                     {% endif %}
                     {{ " / " if not loop.last else "" }}
                 {% endfor %}
-                )
+                )<br>
                 {% endif %}
-                 </li>
                 {% if item.description %}
-                    <dd>{{item.description}}</dd>
+                    <ul class="no-bullet">
+                        <li>{{item.description}}</li>
+                    </ul>
                 {% endif %} 
                 {% endfor %}
+                 </li>
             </ul>
          </ul>
         </div>
