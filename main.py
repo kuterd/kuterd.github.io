@@ -143,7 +143,7 @@ def render_all(general, entries):
 ENTRIES = [
     BlogEntry(
         "V8 Bytecode Reference",
-        "V8 bytecode instruction reference.",
+        "List of V8 bytecode instructions, and their documentation/reference.",
         "v8-bytecode-reference.md",
         date(2023, 7, 29),
     ),
