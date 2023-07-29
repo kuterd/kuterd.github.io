@@ -116,6 +116,11 @@ def render_all(general, entries):
 # ------Add-your-blog-posts-here------
 ENTRIES = [
     BlogEntry(
+        "V8 Bytecode reference", "V8 Bytecode instruction reference.",
+        "v8-bytecode-reference.md",
+        date(2023, 7, 29)
+    ), 
+    BlogEntry(
         "Joy of programming", "Becoming a professional & Joy that programming brings",
         "joy-of-programming.md",
         date(2023, 4, 23)
