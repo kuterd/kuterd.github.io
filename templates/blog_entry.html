@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block head %}
-    <title> {{entry.title}}</title>
+    <title>{{entry.title}} • {{local.headline.format(author=author)}}</title>
+
     <meta name="description" content="{{entry.description}}">
     <script>
         MathJax = {
