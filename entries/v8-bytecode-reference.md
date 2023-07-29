@@ -1,3 +1,4 @@
+Here is a list of bytecode instructions that are used by the V8. JavaScript function gets compiled into bytecode and then gets interpreted by the Ignition interpreter. When there is sufficient feedback, the bytecode gets compiled to efficient native code, either by Turobfan, Turboprop or Maglev.
 
 Extracted from `v8/src/interpreter/interpreter-generator.cc`
 
