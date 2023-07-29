@@ -44,7 +44,7 @@ class BlogEntry(PageEntry):
         content_file.close()
 
         self.content = markdown.markdown(
-            text_content, extensions=["codehilite", "admonition", "fenced_code"]
+            text_content, extensions=["codehilite", "admonition", "extra"]
         )
         self.rss_date = date.strftime("%a, %d %b %Y %H:%M:%S %z")
         self.date = date.strftime("%d-%m-%Y")
