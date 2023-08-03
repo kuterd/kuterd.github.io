@@ -47,7 +47,7 @@ class BlogEntry(PageEntry):
             text_content, extensions=["codehilite", "admonition", "extra"]
         )
         self.rss_date = date.strftime("%a, %d %b %Y %H:%M:%S %z")
-        self.date = date.strftime("%d-%m-%Y")
+        self.date = date.strftime("%d.%m.%Y")
         self.url = title.lower().replace(" ", "-") + ".html"
         self.all_languages = [self]
         self.language = DEFAULT_LANGUAGE

@@ -8,7 +8,7 @@ a {
 html, body {
     background-color: #121212 !important; 
     background-size: cover;
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: Roboto, sans-serif;
     margin:0;
     padding:0;
     height:100%;
@@ -70,7 +70,7 @@ html, body {
 }
 
 #back-button {
-    border-radius:5px;
+    border-radius:10px;
     float:right;
 }
 
@@ -82,7 +82,7 @@ html, body {
     border-radius:10px;
     border: 1px solid white;
     color:white;
-    text-decoration: none;
+    text-decoration: underline;
 }
 
 .highlight[href]:hover {
@@ -121,4 +121,11 @@ blockquote {
     background-color: rgba(255, 255, 255, 0.08);
     margin: 0px;
     padding: 2px 2px 2px 15px;
-} 
+}
+
+.no-bullet {
+    list-style: none;
+}
+
+
+
