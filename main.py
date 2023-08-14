@@ -52,7 +52,6 @@ class BlogEntry(PageEntry):
         self.all_languages = [self]
         self.language = DEFAULT_LANGUAGE
 
-
 def get_git_revision_short_hash():
     return (
         subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])
@@ -84,6 +83,7 @@ def render_page_multilang(file_name, template_name, params, lang):
     params["languages"] = {x: LANGUAGES[x] for x in ACTIVE_LANGUAGES}
     params["language"] = LANGUAGES[lang]
     params["language_code"] = lang
+    params["default_language"] = DEFAULT_LANGUAGE
     params["local"] = LANGUAGES[lang]["localization"]
 
     render_page(file_name, template_name, params)

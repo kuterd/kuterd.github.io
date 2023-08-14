@@ -15,7 +15,13 @@
     </script>   
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-{% endblock %}
+
+     {% for lang_entry in entry.all_languages %}
+        {% if lang_entry.language != entry.language %}
+        <link rel="alternate" hreflang="{{lang_entry.language}}" href="{{lang_entry.url}}" />
+        {% endif %}
+    {% endfor %}
+ {% endblock %}
 
 {% block header %}
     <a href="{{languages[language_code].index}}" class="highlight" id="back-button">&crarr; {{local.go_back}}</a>

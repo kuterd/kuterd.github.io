@@ -3,6 +3,16 @@
     <meta name="description" content="{{ local.headline.format(author=author) }}">
     <title>{{ local.headline.format(author=author) }}</title>
     <link rel="alternate" type="application/rss+xml" title="RSS" href="{{language["feed_page"]}}">
+    {% for lang in active_languages %}
+    {% if lang != language_code %}
+    <link rel="alternate" hreflang="{{lang}}" href="{{ languages[lang].index }}" />
+    {% endif %}
+    {% endfor %}
+
+    {% if default_language == language_code %}
+    <link rel="canonical" href="https://kuterdinel.com" />
+    {% endif %}
+
 {% endblock %}
 
 {% block center %}
@@ -22,14 +32,15 @@
             {% endfor %}
             </dd>
             {% endif %}
-            <li>{{ local.personal_information }}</li>
-            <ul>
-                <li>Github: <a class="highlight" href="https://github.com/kuterd">kuterd</a></li>
-                <li>Linkedin: <a class="highlight" href="https://www.linkedin.com/in/kuter-dinel-1987b81b1/">linkedin</a></li>
-                <li>Twitter: <a class="highlight" href="https://twitter.com/kuterdinel">@KuterDinel</a></li>
-                <li>Email: <span class="highlight"> kuterdinel [at] gmail.com</span></li>
-            </ul>
-            <li>RSS: <a class="highlight" href="{{language["feed_page"]}}">{{local.rss_feed}}</a>
+            <li> {{ local.personal_information }}</br>
+                <ul class="info-list">
+                <li><strong>Github:</strong><a href="https://github.com/kuterd">    kuterd</a></li>
+                <li><strong>Linkedin:</strong><a href="https://www.linkedin.com/in/kuter-dinel-1987b81b1/">    linkedin</a></li>
+                <li><strong>Twitter:</strong><a href="https://twitter.com/kuterdinel">    @KuterDinel</a></li>
+                <li><strong>Email:</strong><a>    kuterdinel [at] gmail.com</a></li>
+                </ul>
+            </li>
+            <li class="info-list"><strong>RSS:</strong><a href="{{language["feed_page"]}}">{{local.rss_feed}}</a>
             {% if language_code == 'en' %}
                 <li>About me<br>
                 <ul class="no-bullet">
