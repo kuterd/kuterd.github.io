@@ -5,13 +5,22 @@ a {
     color:rgb(100, 109, 241);
 }
 
+
 html, body {
     background-color: #121212 !important; 
     background-size: cover;
     font-family: Roboto, sans-serif;
     margin:0;
-    padding:0;
     height:100%;
+}
+
+html {
+    padding: 0;
+}
+
+body {
+    padding-left: 10px;
+    padding-right: 10px;
 }
 
 #header {
@@ -24,8 +33,6 @@ html, body {
     margin: auto;
     padding-top: 20px;
     max-width: 900px;
-    padding-left: 15px;
-    padding-right: 15px;
     min-height: 100%;
     box-sizing: border-box;
     position:relative;
