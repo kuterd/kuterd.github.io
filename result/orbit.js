@@ -177,25 +177,30 @@ document.addEventListener("DOMContentLoaded", function () {
     let newPoint = null;
     let startOffset = null;
     
-    canvas.addEventListener("mousedown", function (e) {
-        let canvasOffsets = canvas.getBoundingClientRect();
-        let x = e.clientX - canvasOffsets.left;
-        let y = e.clientY - canvasOffsets.top;
-        startOffset = [x, y];
 
-        newPoint = new Point(x, y, 0, 0, 600, random_color());
+    function get_position(e) {
+        let canvasOffsets = canvas.getBoundingClientRect();
+        let scale = (canvasOffsets.right - canvasOffsets.left) / width; 
+        let x = (e.clientX - canvasOffsets.left) / scale;
+        let y = (e.clientY - canvasOffsets.top) / scale;
+        return [x, y];
+    }
+
+    canvas.addEventListener("mousedown", function (e) {
+
+        startOffset = get_position(e);
+
+        newPoint = new Point(startOffset[0], startOffset[1], 0, 0, 600, random_color());
     });
 
     canvas.addEventListener("mousemove", function (e) {
         if (newPoint == null)
             return;
 
-        let canvasOffsets = canvas.getBoundingClientRect();
-        let x = e.clientX - canvasOffsets.left;
-        let y = e.clientY - canvasOffsets.top;
+        let pos = get_position(e);
 
-        let dx = startOffset[0] - x; 
-        let dy = startOffset[1] - y;
+        let dx = startOffset[0] - pos[0]; 
+        let dy = startOffset[1] - pos[1];
 
         newPoint.vx = dx / 10;
         newPoint.vy = dy / 10;
