@@ -61,7 +61,7 @@
             
             <li>{{ local.blog_entries }}</li>
             <ul>
-                {% for item in entries %}
+                {% for item in entries if not item.is_hidden %}
                 <li><strong>{{item.date}}</strong> - <a href="{{item.url}}">{{item.title}}</a>
                 {% if item.all_languages | length > 1 %}
                 (

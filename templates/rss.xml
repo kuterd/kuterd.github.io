@@ -1,7 +1,7 @@
 <rss version="2.0">
     <channel>
         <title>{{ local.headline.format(author=author) }}</title>
-    {% for entry in entries %}
+    {% for entry in entries if not entry.is_hidden %}
         <item>
             <title>{{entry.title|e}}</title>
             {% if entry.description %}

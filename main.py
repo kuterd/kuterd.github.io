@@ -6,6 +6,7 @@ import copy
 from translation import LANGUAGES
 import subprocess
 from urllib import parse as urlparse
+from markdown.extensions.toc import TocExtension
 
 SITE_ADDRESS = "https://kuterdinel.com/"
 
@@ -26,8 +27,9 @@ for lang in LANGUAGES:
 
 
 class PageEntry:
-    def __init__(self, url):
+    def __init__(self, url, is_hidden=False):
         self.url = url
+        self.is_hidden = is_hidden
 
     @property
     def full_url(self):
@@ -35,20 +37,20 @@ class PageEntry:
 
 
 class BlogEntry(PageEntry):
-    def __init__(self, title, description, content, date):
+    def __init__(self, title, description, content, date, is_hidden = False):
+        super().__init__(title.lower().replace(" ", "-") + ".html", is_hidden)
+
         self.title = title
         self.description = description
-
         content_file = open(path.join(ENTRIES_FOLDER, content))
         text_content = content_file.read()
         content_file.close()
 
         self.content = markdown.markdown(
-            text_content, extensions=["codehilite", "admonition", "extra"]
+            text_content, extensions=["codehilite", "admonition", "extra", TocExtension(title="Table of Contents")]
         )
         self.rss_date = date.strftime("%a, %d %b %Y %H:%M:%S %z")
         self.date = date.strftime("%d.%m.%Y")
-        self.url = title.lower().replace(" ", "-") + ".html"
         self.all_languages = [self]
         self.language = DEFAULT_LANGUAGE
 
@@ -141,6 +143,13 @@ def render_all(general, entries):
 
 # ------Add-your-blog-posts-here------
 ENTRIES = [
+    BlogEntry(
+        "Writing a very simple JIT Compiler in ~1000 lines of C",
+        "I demonstrate how you can write a simple JIT Compiler for x86 in about 1000 lines of C code.",
+        "writing_a_simple_compiler.md",
+        datetime.now(),
+        is_hidden=True
+    ),
     BlogEntry(
         "V8 Bytecode Reference",
         "List of V8 bytecode instructions, and their documentation/reference.",

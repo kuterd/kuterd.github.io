@@ -7,7 +7,7 @@
     http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd
     http://www.w3.org/1999/xhtml
     http://www.w3.org/2002/08/xhtml/xhtml1-strict.xsd">
-    {% for entry in pages %}
+    {% for entry in pages if not entry.is_hidden %}
     <url>
         <loc>{{entry.full_url}}</loc>
     </url>
