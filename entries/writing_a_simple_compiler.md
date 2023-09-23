@@ -38,7 +38,7 @@ The simplifications of our compiler (Micro C)
 * Horribly inefficient machine code generation.
 * No types, every type is a 64-bit integer, floating point numbers and structs are not supported.
 * Every value is stored in stack, registers are not utilized properly.
-* No Abstract Syntax Tree](https://en.wikipedia.org/wiki/Abstract_syntax_tree) or [Abstract Syntax Tree](https://en.wikipedia.org/wiki/Abstract_syntax_tree). Code generation combined with parsing.
+* No [Intermediate Representation](https://en.wikipedia.org/wiki/Intermediate_representation) or [Abstract Syntax Tree](https://en.wikipedia.org/wiki/Abstract_syntax_tree). Code generation combined with parsing.
 
 Please note that these simplifications significantly reduces the quality of the code that we generate. Modern compilers are often millions of lines of code compared to our ~1000 lines.
 
