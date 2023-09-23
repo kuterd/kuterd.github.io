@@ -11,21 +11,10 @@
         background-color: #F0F0F0;
     }
 
-    @media screen and (max-width: 500px) {
-        .visualization-holder {
-            width: 100% !important;
-        }
-
-        #canvas {
-            width: 100%;
-        }
-    }
-
-
 </style>
 
 <script src="orbit.js"></script>
-<div class="visualization-holder" style="margin: auto; display: block; width:500px;">
+<div class="visualization-holder page-figure">
     <canvas id="canvas">Your browser sadly doesn't support canvas elements, sob sob</canvas>
     <p>
         <button onclick="load_k_scene()">Load 'K'</button>

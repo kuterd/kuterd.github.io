@@ -1,3 +1,5 @@
+<img src="compiler_croped.svg" class="page-figure" style="margin: auto; display: block;" alt="Modern Compiler vs Our Compiler Diagram"/>
+
 Personally, I love how writing compilers requires a combination of both practical and theoretical knowledge.
 
 In this project we will be building a jit compiler for a very small subset of C to gain confidence in recursive descent parsing and generating machine code programmatically. I wanted to build the most basic compiler that I can. I think it is often important to build the most simplest solution to problem before developing more complicated solutions. Building the simplest compiler will show us some of the problems we are going to encounter with more advanced compilers. 
@@ -152,26 +154,13 @@ I think the most of difficult part of parsing is to get operator precedence pars
         flex-direction: row;
     }
 
-    .visualization-holder {
-        margin: auto;
-        width: 500px;
-    }
-
     input {
         color: black;
     }
 
-    @media screen and (max-width: 500px) {
-        .visualization-holder {
-            width: 100% !important;
-        }
 
-        #canvas {
-            width: 100%;
-        }
-    }
 </style>
-<div class="visualization-holder">
+<div class="page-figure">
     <div id="parser-button-holder">
     <input type="text" id="expression-input" value="10 * 20 + 11 * 21 + 23 / (10 + 20)"/>
     <button id="parse-expression">Parse !</button>
@@ -322,9 +311,9 @@ compile_expression_(reader, precedence) {
 }
 ```
 
-The `parse_atom` function parses a int, string, expression in parenthesis. For int and string values, the ` parse_atom` function emits assembly to store the constant value in stack and returns the stack position corresponding to the position where the value is stored.
+The `parse_atom` function parses an integer, string, expression in parenthesis. For int and string values, the ` parse_atom` function emits assembly to store the constant value in stack and returns the stack position corresponding to the position where the value is stored.
 
-As described in the comments `compile_operator_t` is a function pointer that takes in stack positions of input values and generates assembly to do the operation, and returns the stack slot where the result value will be stored.
+As described in the comments `compile_operator_t` is a function pointer that takes in stack positions of input values and generates assembly to do the operation, and returns the stack slot where the result value will be stored. I will show the implementation of these functions later.
 
 # Allocating Executable memory
 The processor will reject to execute code located in pages that are not marked as executable, and under normal circumstances the memory that we allocate is not marked as executable. This is a security feature to try to make it more difficult to build exploits.
