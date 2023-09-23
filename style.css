@@ -174,3 +174,19 @@ table, th, td {
 .toc a {
     color: white;
 }
+
+.page-figure {
+    margin: auto;
+    width: 500px;
+    display: block;
+}
+
+@media screen and (max-width: 500px) {
+    .page-figure {
+        width: 100% !important;
+    }
+
+    .page-figure canvas {
+        width: 100%;
+    }
+}
