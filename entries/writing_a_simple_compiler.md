@@ -29,7 +29,7 @@ We can combine most of the steps above into a single step, and skip a few of the
 
 * __Parsing & Instruction Selection & encoding__ We will combine parsing and code generation into a single step.
 * __Simple Linking__ We will have a very simple linking step at the end. 
-* __JIT execution__
+* __JIT execution__ It's easier to do jit execution instead of creating an executable file.
 
 This is it !
 
