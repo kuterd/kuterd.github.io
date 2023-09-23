@@ -13,7 +13,7 @@ As a side note, I am currently building a more complicated compiler that uses th
 We don't really have to worry about any of this, this is just to give you an idea, may be slightly inaccurate.
 
 * __Tokenization & Parsing__ (we can consider tokenization and parsing as a single step).
-* __Intermediate Representation Creation__ The intermediate representation is how the compiler represents the program internally.
+* __Intermediate Representation Construction__ The intermediate representation is how the compiler represents the program internally.
 * __Usually Some Optimizations__  Where the compiler makes changes to the program to make it run faster without changing the defined behavior of the program(hopefully :D).
 * __Legalization__ Usually some of the architecture specific quirks needs to be handled before instruction selection. 
 * __Instruction Selection__ Where the compiler selects which architecture specific instructions to use to represent the program.
@@ -152,7 +152,7 @@ I think the most of difficult part of parsing is to get operator precedence pars
         flex-direction: row;
     }
 
-    #parser-viz {
+    .visualization-holder {
         margin: auto;
         width: 500px;
     }
@@ -160,8 +160,18 @@ I think the most of difficult part of parsing is to get operator precedence pars
     input {
         color: black;
     }
+
+    @media screen and (max-width: 500px) {
+        .visualization-holder {
+            width: 100% !important;
+        }
+
+        #canvas {
+            width: 100%;
+        }
+    }
 </style>
-<div id="parser-viz">
+<div class="visualization-holder">
     <div id="parser-button-holder">
     <input type="text" id="expression-input" value="10 * 20 + 11 * 21 + 23 / (10 + 20)"/>
     <button id="parse-expression">Parse !</button>
