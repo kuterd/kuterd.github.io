@@ -64,7 +64,13 @@ body {
     margin-top:5px;
 }
 
+@media screen and (max-width: 600px) {
+    html {
+        font-size: 0.83rem;
+    }
+}
 @media screen and (max-width:931px) {
+
     #entry-tree {
         margin-top:20px;
         display:block;
