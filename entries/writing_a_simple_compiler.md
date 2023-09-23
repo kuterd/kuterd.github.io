@@ -1,6 +1,6 @@
 Personally, I love how writing compilers requires a combination of both practical and theoretical knowledge.
 
-In this project we will be building a jit compiler for a very small subset of C to gain confidence in recursive descent parsing and generating assembly programmatically. I wanted to build the most basic compiler that I can. I think it is often important to build the most simplest solution to problem before developing more complicated solutions. Building the simplest compiler will show us some of the problems we are going to encounter with more advanced compilers. 
+In this project we will be building a jit compiler for a very small subset of C to gain confidence in recursive descent parsing and generating machine code programmatically. I wanted to build the most basic compiler that I can. I think it is often important to build the most simplest solution to problem before developing more complicated solutions. Building the simplest compiler will show us some of the problems we are going to encounter with more advanced compilers. 
 
 As a side note, I am currently building a more complicated compiler that uses the __Single Static Assignment__ form and also does proper-ish register allocation, I will try to write about some of the algorithms that I implemented when I finish it, but it still needs a lot of work.
  
@@ -753,11 +753,12 @@ I think implementing variables are simple. We just need to keep a map between a 
 ```c
     compile_exp_atom_(current) {
         ...
-        if (isalpha(c)) {
+        if (isalpha(c)) { // identifier.
+            // read the identifier into a temporary buffer.
             read_ident(current);
 
             // Check if a local variable first.
-            sym_t *var = resolve_sym(local_syms, local_sym_count, ident_buffer);
+            sym_t *var = resolve_sym(local_syms, local_sym_count, ident_buffer); // look up the ident name in local variable array.
             if (var)
                 return var->slot;
 
@@ -772,7 +773,7 @@ I think implementing variables are simple. We just need to keep a map between a 
             }
 
             // External function.
-            uint64_t handle = (uint64_t)dlsym(dlHandle, ident_buffer);
+            uint64_t handle = (uint64_t)dlsym(dlHandle, ident_buffer); 
             critical_check_msg(handle != 0, "Variable not found");
         
             return mov_slot_const(handle);
