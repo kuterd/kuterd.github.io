@@ -144,7 +144,7 @@ def render_all(general, entries):
 # ------Add-your-blog-posts-here------
 ENTRIES = [
     BlogEntry(
-        "Writing a very simple JIT Compiler in ~1000 lines of C",
+        "Writing a very simple JIT Compiler in about 1000 lines of C",
         "I demonstrate how you can write a simple JIT Compiler for x86 in about 1000 lines of C code.",
         "writing_a_simple_compiler.md",
         datetime.now(),
