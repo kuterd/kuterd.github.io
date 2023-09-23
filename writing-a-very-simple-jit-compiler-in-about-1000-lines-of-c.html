@@ -87,7 +87,7 @@
 <p>We don't really have to worry about any of this, this is just to give you an idea, may be slightly inaccurate.</p>
 <ul>
 <li><strong>Tokenization &amp; Parsing</strong> (we can consider tokenization and parsing as a single step).</li>
-<li><strong>Intermediate Representation Creation</strong> The intermediate representation is how the compiler represents the program internally.</li>
+<li><strong>Intermediate Representation Construction</strong> The intermediate representation is how the compiler represents the program internally.</li>
 <li><strong>Usually Some Optimizations</strong>  Where the compiler makes changes to the program to make it run faster without changing the defined behavior of the program(hopefully :D).</li>
 <li><strong>Legalization</strong> Usually some of the architecture specific quirks needs to be handled before instruction selection. </li>
 <li><strong>Instruction Selection</strong> Where the compiler selects which architecture specific instructions to use to represent the program.</li>
@@ -102,7 +102,7 @@
 <ul>
 <li><strong>Parsing &amp; Instruction Selection &amp; encoding</strong> We will combine parsing and code generation into a single step.</li>
 <li><strong>Simple Linking</strong> We will have a very simple linking step at the end. </li>
-<li><strong>JIT execution</strong></li>
+<li><strong>JIT execution</strong> It's easier to do jit execution instead of creating an executable file.</li>
 </ul>
 <p>This is it !</p>
 <p>The simplifications of our compiler (Micro C) </p>
@@ -110,7 +110,7 @@
 <li>Horribly inefficient machine code generation.</li>
 <li>No types, every type is a 64-bit integer, floating point numbers and structs are not supported.</li>
 <li>Every value is stored in stack, registers are not utilized properly.</li>
-<li>No Abstract Syntax Tree](https://en.wikipedia.org/wiki/Abstract_syntax_tree) or <a href="https://en.wikipedia.org/wiki/Abstract_syntax_tree">Abstract Syntax Tree</a>. Code generation combined with parsing.</li>
+<li>No <a href="https://en.wikipedia.org/wiki/Abstract_syntax_tree">Abstract Syntax Tree</a> or <a href="https://en.wikipedia.org/wiki/Abstract_syntax_tree">Abstract Syntax Tree</a>. Code generation combined with parsing.</li>
 </ul>
 <p>Please note that these simplifications significantly reduces the quality of the code that we generate. Modern compilers are often millions of lines of code compared to our ~1000 lines.</p>
 <h2 id="tokenizationlexing">Tokenization(Lexing)</h2>
@@ -209,7 +209,7 @@
         flex-direction: row;
     }
 
-    #parser-viz {
+    .visualization-holder {
         margin: auto;
         width: 500px;
     }
@@ -217,8 +217,18 @@
     input {
         color: black;
     }
+
+    @media screen and (max-width: 500px) {
+        .visualization-holder {
+            width: 100% !important;
+        }
+
+        #canvas {
+            width: 100%;
+        }
+    }
 </style>
-<div id="parser-viz">
+<div class="visualization-holder">
     <div id="parser-button-holder">
     <input type="text" id="expression-input" value="10 * 20 + 11 * 21 + 23 / (10 + 20)"/>
     <button id="parse-expression">Parse !</button>
@@ -884,7 +894,7 @@ To implement the return statement we must evaluate the returned expression, move
     </article>
         </main>
         <footer id='footer'>
-                <span>Kuter Dinel 2023 | Last Updated: 23-09-2023 | Blog Commit Hash: 606c81e </span>
+                <span>Kuter Dinel 2023 | Last Updated: 23-09-2023 | Blog Commit Hash: 4c7c3ac </span>
         </footer>
     </div>
 </body>
