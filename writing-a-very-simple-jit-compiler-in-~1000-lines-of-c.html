@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta name="author" content="Kuter Dinel">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no">
+    <style>
+    </style>
+    <link rel="stylesheet" href="highlight.css">
+    <link rel="stylesheet" href="style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <title>Writing a very simple JIT Compiler in ~1000 lines of C • Kuter Dinel's blog</title>
+
+    <meta name="description" content="I demonstrate how you can write a simple JIT Compiler for x86 in about 1000 lines of C code.">
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>   
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+</head>
+<body>
+    <div id='center'>
+        <div id="header">
+                <h2 style="display:inline;margin:0"><a href="index.html" style="color:white">Kuter Dinel's blog</a></h2>
+    <a href="index.html" class="highlight" id="back-button">&crarr; Go back</a>
+        </div>
+        <main id="center-content">
+    <article>
+    <header>
+    <h1> Writing a very simple JIT Compiler in ~1000 lines of C</h1>
+    <i style="float:right;">on <strong>23.09.2023</strong> by <strong>Kuter Dinel</strong>.</i></br>
+    </header>
+    <p>
+    <p>Personally, I love how writing compilers requires a combination of both practical and theoretical knowledge.</p>
+<p>In this project we will be building a jit compiler for a very small subset of C to gain confidence in recursive descent parsing and generating assembly programmatically. I wanted to build the most basic compiler that I can. I think it is often important to build the most simplest solution to problem before developing more complicated solutions. Building the simplest compiler will show us some of the problems we are going to encounter with more advanced compilers. </p>
+<p>As a side note, I am currently building a more complicated compiler that uses the <strong>Single Static Assignment</strong> form and also does proper-ish register allocation, I will try to write about some of the algorithms that I implemented when I finish it, but it still needs a lot of work.</p>
+<div class="admonition note">
+<p class="admonition-title"><strong>Mandatory warning</strong>: If you just want to create your own programming language and don't care too much about making something from scratch, You are better of just writing a <a href="https://llvm.org/">LLVM</a> Frontend. LLVM Can generate really beautiful optimized code. Instead of the horribly inefficient machine code we will generate. The section on recursive descent parsing would still be useful for you though.</p>
+</div>
+<div class="toc"><span class="toctitle">Table of Contents</span><ul>
+<li><a href="#the-basic-anatomy-of-a-compiler">The basic anatomy of a compiler</a></li>
+<li><a href="#anatomy-of-our-simple-compiler">Anatomy of our simple compiler</a></li>
+<li><a href="#tokenizationlexing">Tokenization(Lexing)</a></li>
+<li><a href="#recursive-descent-parsing">Recursive descent parsing</a><ul>
+<li><a href="#operator-precedence-parsing-and-very-cool-parsing-animation-demo">Operator Precedence Parsing (and very cool parsing animation demo)</a><ul>
+<li><a href="#simple-operator-precedence-parsing">Simple operator precedence parsing</a></li>
+<li><a href="#generalized-operator-precedence-parsing-and-compilation">Generalized operator precedence parsing and compilation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#allocating-executable-memory">Allocating Executable memory</a></li>
+<li><a href="#encoding-x86-64also-known-as-ia-64-or-amd64-instructions">Encoding X86-64(Also known as IA-64 or amd64) instructions</a><ul>
+<li><a href="#what-is-modrm">What is ModRM.</a></li>
+</ul>
+</li>
+<li><a href="#putting-it-all-together">Putting it all together</a><ul>
+<li><a href="#setting-up-and-cleaning-stack-frames">Setting up and cleaning stack frames</a></li>
+<li><a href="#implementing-binary-operators">Implementing binary operators</a></li>
+<li><a href="#calling-functions">Calling functions</a><ul>
+<li><a href="#finding-pointers-of-external-functions">Finding pointers of external functions</a></li>
+<li><a href="#passing-arguments">Passing arguments</a></li>
+<li><a href="#constructing-a-hello-world-program">Constructing a hello world program</a></li>
+</ul>
+</li>
+<li><a href="#handling-control-flow">Handling Control flow</a></li>
+<li><a href="#static-linking">Static Linking</a></li>
+<li><a href="#variable-handling">Variable Handling</a></li>
+</ul>
+</li>
+<li><a href="#conclusion">Conclusion</a></li>
+<li><a href="#things-you-can-do-to-extend-this-simple-compiler">Things you can do to extend this simple compiler</a></li>
+</ul>
+</div>
+<h2 id="the-basic-anatomy-of-a-compiler">The basic anatomy of a compiler</h2>
+<p>We don't really have to worry about any of this, this is just to give you an idea, may be slightly inaccurate.</p>
+<ul>
+<li><strong>Tokenization &amp; Parsing</strong> (we can consider tokenization and parsing as a single step).</li>
+<li><strong>Intermediate Representation Creation</strong> The intermediate representation is how the compiler represents the program internally.</li>
+<li><strong>Usually Some Optimizations</strong>  Where the compiler makes changes to the program to make it run faster without changing the defined behavior of the program(hopefully :D).</li>
+<li><strong>Legalization</strong> Usually some of the architecture specific quirks needs to be handled before instruction selection. </li>
+<li><strong>Instruction Selection</strong> Where the compiler selects which architecture specific instructions to use to represent the program.</li>
+<li><strong>Register Allocation</strong> Usually there is no limit on how many variables we can have in a program, however there are limited number of hardware registers available. This is the stage where we store some variables in memory loading them back to registers when they are needed.</li>
+<li><strong>Instruction Encoding</strong> Encode all instructions into a byte stream getting the program ready to be read by the cpu.</li>
+<li><strong>Static Linking</strong> We don't know addresses of all functions before encoding the program, Since the offsets of functions depend on the sizes of instructions which which we usually don't know in advance. </li>
+<li><strong>JIT execution, executable file or module creation</strong></li>
+</ul>
+<p>Hopefully, I will go over each of these steps in the future but now let's take a look at how the our most basic compiler is going to look like.</p>
+<h2 id="anatomy-of-our-simple-compiler">Anatomy of our simple compiler</h2>
+<p>We can combine most of the steps above into a single step, and skip a few of them (at the cost of quality of the code generated of course)</p>
+<ul>
+<li><strong>Parsing &amp; Instruction Selection &amp; encoding</strong> We will combine parsing and code generation into a single step.</li>
+<li><strong>Simple Linking</strong> We will have a very simple linking step at the end. </li>
+<li><strong>JIT execution</strong></li>
+</ul>
+<p>This is it !</p>
+<p>The simplifications of our compiler (Micro C) </p>
+<ul>
+<li>Horribly inefficient machine code generation.</li>
+<li>No types, every type is a 64-bit integer, floating point numbers and structs are not supported.</li>
+<li>Every value is stored in stack, registers are not utilized properly.</li>
+<li>No Abstract Syntax Tree](https://en.wikipedia.org/wiki/Abstract_syntax_tree) or <a href="https://en.wikipedia.org/wiki/Abstract_syntax_tree">Abstract Syntax Tree</a>. Code generation combined with parsing.</li>
+</ul>
+<p>Please note that these simplifications significantly reduces the quality of the code that we generate. Modern compilers are often millions of lines of code compared to our ~1000 lines.</p>
+<h2 id="tokenizationlexing">Tokenization(Lexing)</h2>
+<p>It's  useful that we think of the code as a series of tokens. Tokens are like words. We essentially assign each token a class like; identifier, number, left parenthesis, right parenthesis, operator etc. This helps us understand the contents of code (which is just text) and makes it easier for us to parse it later.</p>
+<p>Essentially tokenizer takes in text in the <strong>form of:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="n">asd</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="p">}</span>
+</code></pre></div>
+
+<p><strong>And outputs:</strong></p>
+<div class="codehilite"><pre><span></span><code>{&lt;identifier(asd)&gt;, &lt;l_paran&gt;, &lt;r_paran&gt;, &lt;l_brace&gt;, &lt;r_brace&gt; ... }
+</code></pre></div>
+
+<p>That's easier to understand than <code>{'a', 's', 'd', ' ', '(', ')', ...}</code> right ?</p>
+<p>Sometimes it may be favorable to have the tokenizer as a separate competent, especially if it involves complex logic. Since my tokenizer only needs one character to determine token type in most cases, I opted to not have a separate tokenizer and just <strong>combined tokenization and parsing</strong>. </p>
+<p><strong>To give an example on how we can combine tokenization and parsing:</strong> </p>
+<div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="n">parse_atom</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">char</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">**</span><span class="n">reader</span><span class="p">;</span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">c</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="sc">&#39;0&#39;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="sc">&#39;9&#39;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="c1">// is this a number token ?</span>
+<span class="w">            </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">read_int</span><span class="p">(</span><span class="n">reader</span><span class="p">);</span>
+<span class="w">            </span><span class="c1">// Materialize the constant number.</span>
+<span class="w">            </span><span class="p">...</span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">c</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="sc">&#39;&quot;&#39;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="c1">// is this a string token ? </span>
+<span class="w">            </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">string</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">parse_string</span><span class="p">(</span><span class="n">reader</span><span class="p">);</span>
+<span class="w">            </span><span class="c1">// Materialize the string pointer as a constant.</span>
+<span class="w">            </span><span class="p">...</span>
+<span class="w">        </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">c</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="sc">&#39;(&#39;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="c1">// left parenthesis token.</span>
+<span class="w">            </span><span class="c1">// Parse expression inside parenthesis </span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+</code></pre></div>
+
+<p>It's as simple as that !</p>
+<h2 id="recursive-descent-parsing">Recursive descent parsing</h2>
+<p>Most modern compilers (clang, gcc, etc) doesn't use parser generators and instead use handwritten(🧿)  recursive descent parsers. I think once it "clicks" in your mind it be trivial to write any recursive descent parser you want !</p>
+<p>For example let's imagine that a function can be defined like in the example below.</p>
+<div class="codehilite"><pre><span></span><code><span class="n">asd</span><span class="w"> </span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">...</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>We can parse it like this:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="n">parse_function_declaration</span><span class="w"> </span><span class="p">(</span><span class="n">reader</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">function_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">read_ident</span><span class="p">(</span><span class="n">reader</span><span class="p">);</span><span class="w"> </span><span class="c1">// read an identifier, consisting of lower case or upper case characters. </span>
+<span class="w">        </span><span class="n">skip_whitespace</span><span class="p">();</span><span class="w"> </span><span class="c1">// Skip any whitespace character.</span>
+<span class="w">        </span><span class="n">assert_compilation</span><span class="p">(</span><span class="o">**</span><span class="n">reader</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="sc">&#39;(&#39;</span><span class="p">);</span>
+<span class="w">        </span><span class="p">(</span><span class="o">*</span><span class="n">reader</span><span class="p">)</span><span class="o">++</span><span class="p">;</span><span class="w"> </span><span class="c1">// skip the &#39;(&#39;.</span>
+
+<span class="w">        </span><span class="kt">size_t</span><span class="w"> </span><span class="n">argCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+<span class="w">        </span><span class="n">argument_info_t</span><span class="w"> </span><span class="n">arguments</span><span class="p">[</span><span class="n">MAX_ARGUMENTS</span><span class="p">];</span>
+<span class="w">        </span><span class="c1">// Parse the argument list.</span>
+<span class="w">        </span><span class="kt">bool</span><span class="w"> </span><span class="n">first_arg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
+<span class="w">        </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="o">**</span><span class="n">reader</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="sc">&#39;)&#39;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="c1">// If this is the first argument, we don&#39;t expect to have a comma here since commas go between arguments.</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">first_arg</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="n">assert_compilation</span><span class="p">(</span><span class="o">**</span><span class="n">reader</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="sc">&#39;,&#39;</span><span class="p">);</span><span class="w">  </span><span class="c1">// check the comma separation for the argument list.</span>
+<span class="w">                </span><span class="p">(</span><span class="o">*</span><span class="n">reader</span><span class="p">)</span><span class="o">++</span><span class="p">;</span>
+<span class="w">            </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="n">first_arg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">            </span><span class="p">...</span>
+<span class="w">            </span><span class="n">arguments</span><span class="p">[</span><span class="n">argCount</span><span class="o">++</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">parse_arg</span><span class="p">(</span><span class="n">reader</span><span class="p">);</span><span class="w">  </span><span class="c1">// Parse the name of the argument.</span>
+<span class="w">            </span><span class="p">...</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="p">...</span>
+
+<span class="w">        </span><span class="n">parse_code_block</span><span class="p">(</span><span class="n">reader</span><span class="p">);</span>
+
+<span class="w">    </span><span class="p">}</span>
+</code></pre></div>
+
+<p>Well, that was simple enough right ? If not, keep in mind that you can go over the finished code with a debugger, I am sure that will help. </p>
+<h3 id="operator-precedence-parsing-and-very-cool-parsing-animation-demo">Operator Precedence Parsing (and very cool parsing animation demo)</h3>
+<p>I think the most of difficult part of parsing is to get operator precedence parsing right.</p>
+<p><code>123 + 10 * 5 + 120 / 2</code> should be parsed as <code>123 + (10 * 5) + (120 / 2)</code> not as <code>((123 + 10) * 5) + 120) / 2</code>.</p>
+<script src="parser-viz.js"></script>
+<style>
+    #parse-expression {
+        margin-left: 5px;
+        padding-left:10px;
+        padding-right:10px;
+        font-weight: bold;
+        width: 100px;
+        color: black;
+    }
+    #parser-button-holder input {
+        padding: 5px;
+        width: 100%;
+    }
+
+    #parser-button-holder {
+        margin-bottom: 10px;
+        display: flex;
+        flex-direction: row;
+    }
+
+    #parser-viz {
+        margin: auto;
+        width: 500px;
+    }
+
+    input {
+        color: black;
+    }
+</style>
+<div id="parser-viz">
+    <div id="parser-button-holder">
+    <input type="text" id="expression-input" value="10 * 20 + 11 * 21 + 23 / (10 + 20)"/>
+    <button id="parse-expression">Parse !</button>
+    </div>
+    <canvas id="canvas">Whoa Horsey, Your browser sadly doesn't support html canvas elements.</canvas>
+    <p style="color: #7cf2f4; font-style: italic">I made a very cool demo that demonstrates operator precedence parsing, make sure you try it (I spent way too much time on it, so pls try it lol).<p>
+</div>
+
+<div class="admonition note">
+<p class="admonition-title">In the demo above examine how combining different operators result in different parse trees, try an expression with parentheses. Please note that only simple expressions with numbers are supported.</p>
+</div>
+<h4 id="simple-operator-precedence-parsing">Simple operator precedence parsing</h4>
+<p>Let's start by writing a function to only parse multiplication and division operations. Since both multiplication and division have the same precedence, we just have to ensure that it's parsed left to right.
+Also we have to consider that a number by itself is a valid expression(like "123"). Meaning that we need to be able to handle that case as well. We will return if we ever see a operator that is not the correct precedence level.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Parse multiplication, division or just an atom value.</span>
+<span class="n">parse_multiply</span><span class="w"> </span><span class="p">(</span><span class="n">reader</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">left</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">parse_atom</span><span class="p">(</span><span class="n">reader</span><span class="p">);</span>
+<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="c1">// keep parsing until we reach eof or different operator precedence.</span>
+<span class="w">        </span><span class="n">skip_whitespace</span><span class="p">(</span><span class="n">reader</span><span class="p">);</span>
+
+<span class="w">        </span><span class="kt">char</span><span class="w"> </span><span class="n">op</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">**</span><span class="n">reader</span><span class="p">;</span>
+
+<span class="w">        </span><span class="c1">// Not the correct operator precedence or End of File.</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">op</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="p">(</span><span class="n">op</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="sc">&#39;*&#39;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">op</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="sc">&#39;/&#39;</span><span class="p">))</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+
+<span class="w">        </span><span class="n">skip_whitespace</span><span class="p">(</span><span class="n">reader</span><span class="p">);</span>
+
+<span class="w">        </span><span class="n">right</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">parse_atom</span><span class="p">(</span><span class="n">reader</span><span class="p">);</span>
+
+<span class="w">        </span><span class="c1">// &quot;multiply&quot; or &quot;divide&quot; functions here could either mean evaluating the value or emitting assembly.</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">op</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="sc">&#39;*&#39;</span><span class="p">)</span>
+<span class="w">            </span><span class="n">left</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">multiply</span><span class="p">(</span><span class="n">left</span><span class="p">,</span><span class="w"> </span><span class="n">right</span><span class="p">);</span>
+<span class="w">        </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">op</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="sc">&#39;/&#39;</span><span class="p">)</span>
+<span class="w">            </span><span class="n">left</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">divide</span><span class="p">(</span><span class="n">left</span><span class="p">,</span><span class="w"> </span><span class="n">right</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">left</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Now let's handle parsing additions and subtractions. We need to be able to handle "10 * 20 + 10".</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Parse addition or subtraction.</span>
+<span class="n">parse_add</span><span class="w"> </span><span class="p">(</span><span class="n">reader</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="c1">// Important: We call the parse_multiply function to handle higher precedence operators.</span>
+<span class="w">    </span><span class="n">left</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">parse_multiply</span><span class="p">(</span><span class="n">reader</span><span class="p">);</span>
+<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">skip_whitespace</span><span class="p">(</span><span class="n">reader</span><span class="p">);</span>
+
+<span class="w">        </span><span class="kt">char</span><span class="w"> </span><span class="n">op</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">**</span><span class="n">reader</span><span class="p">;</span>
+
+<span class="w">        </span><span class="c1">// Check if not the correct operator precedence or End of File.</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">op</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="p">(</span><span class="n">op</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="sc">&#39;+&#39;</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">op</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="sc">&#39;-&#39;</span><span class="p">))</span>
+<span class="w">            </span><span class="k">break</span><span class="p">;</span>
+
+<span class="w">        </span><span class="n">skip_whitespace</span><span class="p">(</span><span class="n">reader</span><span class="p">);</span>
+<span class="w">        </span><span class="c1">// Important: We call the parse_multiply function to handle higher precedence operators.</span>
+<span class="w">        </span><span class="n">right</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">parse_multiply</span><span class="p">(</span><span class="n">reader</span><span class="p">);</span>
+
+<span class="w">        </span><span class="c1">// &quot;add&quot; or &quot;subtract&quot; functions here could either mean evaluating the value or emitting assembly.</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">op</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="sc">&#39;+&#39;</span><span class="p">)</span>
+<span class="w">            </span><span class="n">left</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">add</span><span class="p">(</span><span class="n">left</span><span class="p">,</span><span class="w"> </span><span class="n">right</span><span class="p">);</span>
+<span class="w">        </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">op</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="sc">&#39;-&#39;</span><span class="p">)</span>
+<span class="w">            </span><span class="n">left</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">subtract</span><span class="p">(</span><span class="n">left</span><span class="p">,</span><span class="w"> </span><span class="n">right</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">left</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<div class="admonition note">
+<p class="admonition-title">Using what you have learned so far, you can try to create a calculator program that takes in a expression like '33 / (10 + 23)' calculates the result.</p>
+</div>
+<h4 id="generalized-operator-precedence-parsing-and-compilation">Generalized operator precedence parsing and compilation</h4>
+<p>As you might have seen, the <code>parse_multiply</code> and <code>parse_add</code> functions share too much in common, and since we will have multiple levels of operator precedences, our code would get really ugly real quick.
+We can generalize the binary operator parsing such that it's very easy to add new operators.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// A compile operator function takes in stack positions of it&#39;s arguments and returns the stack position of it&#39;s result.</span>
+<span class="k">typedef</span><span class="w"> </span><span class="n">slot_t</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">compile_operator_t</span><span class="p">)(</span><span class="n">slot_t</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">slot_t</span><span class="w"> </span><span class="n">b</span><span class="p">);</span>
+
+
+<span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">op_string</span><span class="p">;</span>
+<span class="w">    </span><span class="kt">size_t</span><span class="w"> </span><span class="n">precedence</span><span class="p">;</span>
+<span class="w">    </span><span class="n">compile_operator_t</span><span class="w"> </span><span class="n">compile_op</span><span class="p">;</span><span class="w"> </span><span class="c1">// this a function pointer.</span>
+<span class="p">}</span><span class="w"> </span><span class="n">bin_operator_t</span><span class="p">;</span>
+
+<span class="n">bin_operator_t</span><span class="w"> </span><span class="n">bin_operators</span><span class="p">[]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">{.</span><span class="n">op_string</span><span class="o">=</span><span class="s">&quot;*&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">precedence</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">compile_op</span><span class="o">=</span><span class="n">compile_mul</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{.</span><span class="n">op_string</span><span class="o">=</span><span class="s">&quot;/&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">precedence</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">compile_op</span><span class="o">=</span><span class="n">compile_div</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{.</span><span class="n">op_string</span><span class="o">=</span><span class="s">&quot;+&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">precedence</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">compile_op</span><span class="o">=</span><span class="n">compile_add</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{.</span><span class="n">op_string</span><span class="o">=</span><span class="s">&quot;-&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">precedence</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">compile_op</span><span class="o">=</span><span class="n">compile_sub</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{.</span><span class="n">op_string</span><span class="o">=</span><span class="s">&quot;&lt;&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">precedence</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">compile_op</span><span class="o">=</span><span class="n">compile_less</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{.</span><span class="n">op_string</span><span class="o">=</span><span class="s">&quot;&gt;&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">precedence</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">compile_op</span><span class="o">=</span><span class="n">compile_greater</span><span class="p">},</span>
+<span class="w">    </span><span class="p">...</span>
+<span class="w">    </span><span class="p">{.</span><span class="n">op_string</span><span class="o">=</span><span class="s">&quot;&amp;&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">precedence</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">compile_op</span><span class="o">=</span><span class="n">compile_and</span><span class="p">},</span>
+<span class="w">    </span><span class="p">{.</span><span class="n">op_string</span><span class="o">=</span><span class="s">&quot;|&quot;</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">precedence</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="p">.</span><span class="n">compile_op</span><span class="o">=</span><span class="n">compile_or</span><span class="p">},</span>
+<span class="w">    </span><span class="p">...</span>
+<span class="p">};</span>
+
+<span class="n">compile_expression_</span><span class="p">(</span><span class="n">reader</span><span class="p">,</span><span class="w"> </span><span class="n">precedence</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">skip_whitespace</span><span class="p">(</span><span class="n">reader</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">precedence</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">MAX_PRECEDENCE</span><span class="p">)</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">parse_atom</span><span class="p">(</span><span class="n">reader</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">slot_t</span><span class="w"> </span><span class="n">left</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">compile_expression_</span><span class="p">(</span><span class="n">current</span><span class="p">,</span><span class="w"> </span><span class="n">precedence</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">skip_whitespace</span><span class="p">(</span><span class="n">current</span><span class="p">);</span>
+<span class="w">        </span><span class="kt">char</span><span class="w"> </span><span class="n">op</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">**</span><span class="n">current</span><span class="p">;</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">op</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">left</span><span class="p">;</span>
+
+<span class="w">        </span><span class="kt">char</span><span class="w"> </span><span class="n">nOP</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">*</span><span class="p">(</span><span class="o">*</span><span class="n">current</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+
+<span class="w">        </span><span class="n">compile_operator_t</span><span class="w"> </span><span class="n">compile_op_fun</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">NULL</span><span class="p">;</span>
+<span class="w">        </span><span class="c1">// Go over each operator and check if the current operator.</span>
+<span class="w">        </span><span class="c1">// Would have been better if used a hash map here, but I want to limit the lines of code.</span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">size_t</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">bin_operators</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="k">sizeof</span><span class="p">(</span><span class="n">bin_operator_t</span><span class="p">);</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">bin_operator_t</span><span class="w"> </span><span class="o">*</span><span class="n">operator</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">bin_operators</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+
+<span class="w">            </span><span class="c1">// Every operator is either one or two characters long. </span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">operator</span><span class="o">-&gt;</span><span class="n">op_string</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">op</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="p">(</span><span class="n">IS_OPERATOR_CONTINUATION</span><span class="p">(</span><span class="n">nOP</span><span class="p">)</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="n">operator</span><span class="o">-&gt;</span><span class="n">op_string</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">nOP</span><span class="p">))</span>
+<span class="w">                </span><span class="k">continue</span><span class="p">;</span>
+
+<span class="w">            </span><span class="c1">// Operator found, check precedence.</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">operator</span><span class="o">-&gt;</span><span class="n">precedence</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">precedence</span><span class="p">)</span>
+<span class="w">                </span><span class="k">break</span><span class="p">;</span><span class="w"> </span><span class="c1">// not the correct precedence.</span>
+
+<span class="w">            </span><span class="c1">// Operator and precedence matches.</span>
+<span class="w">            </span><span class="n">compile_op_fun</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">operator</span><span class="o">-&gt;</span><span class="n">compile_op</span><span class="p">;</span>
+<span class="w">            </span><span class="p">(</span><span class="o">*</span><span class="n">current</span><span class="p">)</span><span class="o">++</span><span class="p">;</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">operator</span><span class="o">-&gt;</span><span class="n">op_string</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="w">                </span><span class="p">(</span><span class="o">*</span><span class="n">current</span><span class="p">)</span><span class="o">++</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">compile_op_fun</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="nb">NULL</span><span class="p">)</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">left</span><span class="p">;</span>
+
+<span class="w">        </span><span class="n">slot_t</span><span class="w"> </span><span class="n">right</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">compile_expression_</span><span class="p">(</span><span class="n">current</span><span class="p">,</span><span class="w"> </span><span class="n">precedence</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span>
+<span class="w">        </span><span class="n">left</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">compile_op_fun</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="n">right</span><span class="p">);</span><span class="w"> </span><span class="c1">// Call the compile function for this op to generate assembly and return the stack slot of the resulting value.</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>The <code>parse_atom</code> function parses a int, string, expression in parenthesis. For int and string values, the <code>parse_atom</code> function emits assembly to store the constant value in stack and returns the stack position corresponding to the position where the value is stored.</p>
+<p>As described in the comments <code>compile_operator_t</code> is a function pointer that takes in stack positions of input values and generates assembly to do the operation, and returns the stack slot where the result value will be stored.</p>
+<h1 id="allocating-executable-memory">Allocating Executable memory</h1>
+<p>The processor will reject to execute code located in pages that are not marked as executable, and under normal circumstances the memory that we allocate is not marked as executable. This is a security feature to try to make it more difficult to build exploits.
+We need to ask the kernel specifically to map executable memory to our process.</p>
+<p>This is how you do it linux:</p>
+<div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mmap</span><span class="p">(</span>
+<span class="w">       </span><span class="nb">NULL</span><span class="p">,</span>
+<span class="w">       </span><span class="n">allocSize</span><span class="p">,</span>
+<span class="w">       </span><span class="n">PROT_READ</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PROT_WRITE</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PROT_EXEC</span><span class="p">,</span>
+<span class="w">       </span><span class="n">MAP_ANONYMOUS</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">MAP_PRIVATE</span><span class="p">,</span>
+<span class="w">       </span><span class="mi">-1</span><span class="p">,</span>
+<span class="w">       </span><span class="mi">0</span>
+<span class="w">    </span><span class="p">);</span>
+</code></pre></div>
+
+<h1 id="encoding-x86-64also-known-as-ia-64-or-amd64-instructions">Encoding X86-64(Also known as IA-64 or amd64) instructions</h1>
+<p>Please note that I will try to port the code to arm whenever I have time. But I wanted to start with x86.</p>
+<p>The x86 architecture has it's roots to 1970's. And a modern x86 CPU can still execute an 16-bit operating system that was build in 1980's. Being so old and so backwards compatible does have some caveats. Encoding x86 instructions is kinda <strong>difficult</strong> and frankly it took me a long time to understand.</p>
+<p>Intel's <a href="https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html">Architecture Software Developer Manual</a> describes the x86 architecture in detail, including how to encode each instructions. I strongly suggest that you take a look because I won't go over how each instruction we use is encoded.</p>
+<p>Let's take a look at how to encode a simple <code>ADD</code> instruction. The <code>ADD</code> instruction is listed under  Chapter 3 of the Volume 2 of the Architecture Software Developer Manual.  We can see that there is a table.</p>
+<table>
+<thead>
+<tr>
+<th>Opcode</th>
+<th>Instructions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>04 ib</td>
+<td>ADD AL, imm8</td>
+</tr>
+<tr>
+<td>05 iw</td>
+<td>ADD AX, imm16</td>
+</tr>
+<tr>
+<td>...</td>
+<td>...</td>
+</tr>
+<tr>
+<td>01 /r</td>
+<td>ADD r/m16, r16</td>
+</tr>
+<tr>
+<td>01 /r</td>
+<td>ADD r/m32, r32</td>
+</tr>
+<tr>
+<td>REX.W + 01 /r</td>
+<td>ADD r/m64, r64</td>
+</tr>
+<tr>
+<td>...</td>
+<td>...</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">I  suggest that you take look at Chapter 2 of Architecture Software Developer which describes the instruction format and also the first part of Chapter 3 which describes how to interpret the instruction listings.</p>
+</div>
+<p>We are specifically interested in the <code>ADD r/m64, r64</code> variation of the instruction. <code>r/m64</code> means that one of the operands is ModRM which I will explain later. And <code>r64</code> means that the other operand is a 64-bit register.</p>
+<p>And although we can guess that 01 means 0x01 in hex what does <code>/r</code> mean, "/r" means that the second register operand is encoded as a part of the ModRM byte. </p>
+<p>Also here seems to be 3 different instructions that use the same encoding.
+As I said before, a modern x86 processor can run an 16-bit operating system. Meaning that the processor has a 16-bit mode. And when you use the <code>01 /r</code> encoding the processor can interpret that as a 16-bit instruction if it's running in 16-bit mode. The 16-bit instruction is still usable in 64-bit mode however, you need to use a specific prefix, for it.</p>
+<p>What does the <code>REX.W</code> in <code>REX.W + 01 /r</code>  mean ?
+Differently from the 16-bit mode, instructions are 32-bit by default in 64-bit mode, and we need to use the REX prefix in order to access the 64-bit mode instruction. I believe this is for backwards compatibility (you can run a 32-bit program in a 64-bit mode through special compatibility mode).</p>
+<p>The REX prefix can be encoded with the function below.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// @W Make the addressing 64bit.</span>
+<span class="c1">// @R Extension for the ModR/M reg field.</span>
+<span class="c1">// @X Extension of the SIB index field.</span>
+<span class="c1">// @B Extension for the R/M field or opcode reg field.</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">emit_rex</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">w</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="mb">0b0100</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">4</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="p">(</span><span class="n">w</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="p">(</span><span class="n">r</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">b</span><span class="p">;</span>
+<span class="w">    </span><span class="n">push_int8</span><span class="p">(</span><span class="n">result</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p><strong>NOTE:</strong> <code>push_intXX()</code> family of functions just emit a byte to the output stream. We assume they are already defined in the rest of the article.</p>
+<p>As specified in the comment, we need to give <code>1</code> to the W field to make the instruction 64-bit.</p>
+<h2 id="what-is-modrm">What is ModRM.</h2>
+<p>ModRM is what makes x86 a CISC (Complex Instruction Set Computer) architecture. ModRM allows a single opcode to have different addressing modes.
+The <code>/</code> in the <code>REX.W + 01 /r</code> means that this instruction uses the <strong>ModRM</strong> byte.</p>
+<p>The <strong>ModRM</strong> byte has 3 parts.
+* <strong>mod</strong> Specifies which addressing mode we are using.
+* <strong>regop</strong> Either register for other side or a <strong>constant value for unary operations</strong> (<code>/1</code> etc).
+* <strong>rm</strong> Register used for the addressing mode.</p>
+<p>Please note that for unary instructions the encoding will be like <code>/4</code> which means that the constant value 4 must be put inside the regop. An example of this is shown with the encoding of the <code>call r/m64</code> instruction.  </p>
+<p>The code below encodes the <strong>ModRM</strong> byte.</p>
+<div class="codehilite"><pre><span></span><code><span class="w"> </span><span class="n">emit_modrm</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">mod</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">regop</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">rm</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">mod</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">6</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="p">(</span><span class="n">regop</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">rm</span><span class="p">;</span>
+<span class="w">    </span><span class="n">push_int8</span><span class="p">(</span><span class="n">result</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<table>
+<thead>
+<tr>
+<th>Mod</th>
+<th>Addressing mode</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>[rm]</td>
+<td>Value of the memory address pointed by the register <code>rm</code></td>
+</tr>
+<tr>
+<td>1</td>
+<td>[rm + disp8]</td>
+<td>Value of the memory address pointed by the register <code>rm</code> plus an offset.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>[rm + disp32]</td>
+<td>Same as above but a 32-bit offset instead of 8-bits.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>rm</td>
+<td>Just value in the register.</td>
+</tr>
+</tbody>
+</table>
+<p>I said that <code>rm</code> is the register and <code>regop</code> is sometimes used as a register but which value corresponds to which register ? We can use the table bellow.</p>
+<table>
+<thead>
+<tr>
+<th>Register</th>
+<th>Code</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RAX</td>
+<td>0</td>
+<td>The accumulator. Some instructions require that one of the operands is in this register.</td>
+</tr>
+<tr>
+<td>RCX</td>
+<td>1</td>
+<td></td>
+</tr>
+<tr>
+<td>RDX</td>
+<td>2</td>
+<td></td>
+</tr>
+<tr>
+<td>RBX</td>
+<td>3</td>
+<td>Frame pointer, points to the start of the current frame.</td>
+</tr>
+<tr>
+<td>RSP</td>
+<td>4</td>
+<td>Stack pointer, points to the end of the current stack. Can't be used in ModRM.</td>
+</tr>
+<tr>
+<td>RBP</td>
+<td>5</td>
+<td></td>
+</tr>
+<tr>
+<td>RSI</td>
+<td>6</td>
+<td></td>
+</tr>
+<tr>
+<td>RDI</td>
+<td>7</td>
+<td></td>
+</tr>
+<tr>
+<td>R8</td>
+<td>8</td>
+<td>See note below.</td>
+</tr>
+<tr>
+<td>R9</td>
+<td>9</td>
+<td></td>
+</tr>
+<tr>
+<td>...</td>
+<td>...</td>
+<td></td>
+</tr>
+<tr>
+<td>R15</td>
+<td>15</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title"><strong>Important Note:</strong> For encoding registers R8-R15 you must use the REX R and B fields. The reason we have to do this is because the registers R8 to R15 were added with the 64-bit mode. And the encodings are same between 64 and 32 bit modes due to compatibility reasons.</p>
+</div>
+<p>From know on I will assume that the registers are defined in a enum.
+Now let's put it all together and try to encode <code>ADD RCX, RDX</code></p>
+<div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="n">emit_rex</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">    </span><span class="n">push_int8</span><span class="p">(</span><span class="mh">0x01</span><span class="p">);</span><span class="w">  </span><span class="c1">// opcode for add.</span>
+<span class="w">    </span><span class="n">emit_modrm</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="n">RDX</span><span class="p">,</span><span class="w"> </span><span class="n">RCX</span><span class="p">);</span>
+</code></pre></div>
+
+<p>Before we move on let's check that our code is working properly, we can save the byte stream to a file and disassemble it using the <code>objdump</code> command.</p>
+<div class="codehilite"><pre><span></span><code>objdump<span class="w"> </span>-D<span class="w"> </span>-Mintel,x86-64<span class="w"> </span>-b<span class="w"> </span>binary<span class="w"> </span>-m<span class="w"> </span>i386<span class="w"> </span><span class="nv">$1</span><span class="w"> </span>
+</code></pre></div>
+
+<p>Aaand the output is:</p>
+<div class="codehilite"><pre><span></span><code>$<span class="w"> </span>objdump<span class="w"> </span>-D<span class="w"> </span>-Mintel,x86-64<span class="w"> </span>-b<span class="w"> </span>binary<span class="w"> </span>-m<span class="w"> </span>i386<span class="w"> </span>assembly_output
+
+assembly_output:<span class="w">     </span>file<span class="w"> </span>format<span class="w"> </span>binary
+
+
+Disassembly<span class="w"> </span>of<span class="w"> </span>section<span class="w"> </span>.data:
+
+<span class="m">00000000</span><span class="w"> </span>&lt;.data&gt;:
+<span class="w">   </span><span class="m">0</span>:<span class="w">   </span><span class="m">48</span><span class="w"> </span><span class="m">01</span><span class="w"> </span><span class="nb">cd</span><span class="w">                </span>add<span class="w">    </span>rcx,rdx
+</code></pre></div>
+
+<p>Yaay ! Let's try to encode <code>ADD [RCX], RDX</code> this will add RDX to the value in the address pointed in RCX.</p>
+<div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="n">emit_rex</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">    </span><span class="n">push_int8</span><span class="p">(</span><span class="mh">0x01</span><span class="p">);</span><span class="w">  </span><span class="c1">// opcode for add.</span>
+<span class="w">    </span><span class="n">emit_modrm</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">RCX</span><span class="p">,</span><span class="w"> </span><span class="n">RDX</span><span class="p">);</span><span class="w"> </span><span class="c1">// mod type changed !</span>
+</code></pre></div>
+
+<p>Now let's try something a little bit more difficult, as I said before, we will be storing all values in stack. So let's try RBP (Frame pointer) relative addressing. This is the <strong>most important one</strong> because we will be primarily using this addressing mode.</p>
+<p><code>ADD [RBP - offset], RCX</code></p>
+<div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="n">emit_rex</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">    </span><span class="n">push_int8</span><span class="p">(</span><span class="mh">0x01</span><span class="p">);</span><span class="w">  </span><span class="c1">// opcode for add.</span>
+<span class="w">    </span><span class="n">emit_modrm</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="n">RCX</span><span class="p">,</span><span class="w"> </span><span class="n">RBP</span><span class="p">);</span>
+<span class="w">    </span><span class="n">push_int32</span><span class="p">(</span><span class="o">-</span><span class="n">offset</span><span class="p">);</span>
+</code></pre></div>
+
+<p>Most instructions does not accept 64-bit constant values. We can use the <code>MOVABS reg64, imm64</code> instruction to load a 64 bit value to a register and then use that register.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Store a constant value in a register.</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">store_const_in_reg</span><span class="p">(</span><span class="n">reg64</span><span class="w"> </span><span class="n">reg</span><span class="p">,</span><span class="w"> </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">cons</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">regNumber</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">uint8_t</span><span class="p">)</span><span class="n">reg</span><span class="p">;</span>
+<span class="w">    </span><span class="n">emit_rex</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">regNumber</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">7</span><span class="p">);</span>
+<span class="w">    </span><span class="n">regNumber</span><span class="w"> </span><span class="o">&amp;=</span><span class="w"> </span><span class="mb">0b111</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// MOVABS REG64, CONST64</span>
+<span class="w">    </span><span class="n">push_int8</span><span class="p">(</span><span class="mh">0xB8</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">regNumber</span><span class="p">);</span><span class="w"> </span><span class="c1">// This is different from any other instruction that we have seen so far.</span>
+<span class="w">    </span><span class="n">push_int64</span><span class="p">(</span><span class="n">cons</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<div class="admonition note">
+<p class="admonition-title">If you don't know which instruction to use, you can cheat a little bit and use <a href="https://godbolt.com">godbolt.com</a> to compare C code to assembly.</p>
+</div>
+<h1 id="putting-it-all-together">Putting it all together</h1>
+<p>We looked at parsing, and encoding x86 instructions now let's put everything together.</p>
+<h2 id="setting-up-and-cleaning-stack-frames">Setting up and cleaning stack frames</h2>
+<p>When we enter a function, we must first setup the stack frame and on exit we must remove it. Since we will be keeping all values in stack we also need to allocate stack space. </p>
+<div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="nf">push</span><span class="w"> </span><span class="nb">RBP</span><span class="w"> </span><span class="c1">; Save the old stack frame.</span>
+<span class="w">    </span><span class="nf">mov</span><span class="w"> </span><span class="nb">RBP</span><span class="p">,</span><span class="w"> </span><span class="nb">RSP</span><span class="w"> </span><span class="c1">; Create a new stack frame.</span>
+<span class="w">    </span><span class="nf">sub</span><span class="w"> </span><span class="nb">RSP</span><span class="p">,</span><span class="w"> </span><span class="mh">0x16</span><span class="w"> </span><span class="c1">; Stack space we want to allocate, stack must be aligned to 16 bytes or bad things will happen. (We use sub here because the stack grows downwards).</span>
+
+<span class="w">    </span><span class="c1">; Insert code here.</span>
+
+<span class="w">    </span><span class="nf">mov</span><span class="w"> </span><span class="nb">RSP</span><span class="p">,</span><span class="w"> </span><span class="nb">RBP</span><span class="w"> </span><span class="c1">; Restore stack pointer</span>
+<span class="w">    </span><span class="nf">pop</span><span class="w"> </span><span class="nb">RBP</span><span class="w"> </span><span class="c1">; Restore frame pointer.</span>
+</code></pre></div>
+
+<p>One problem here is that we need to emit the code for stack frame allocation before we compile the rest of this function. We don't actually know the amount of space we need to allocate.</p>
+<p>The solution is to hold a pointer to the point where the constant value lives in the output stream and fill it in later.</p>
+<div class="codehilite"><pre><span></span><code><span class="kt">int32_t</span><span class="o">*</span><span class="w"> </span><span class="nf">emit_prolog</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">push_stack</span><span class="p">(</span><span class="n">RBP</span><span class="p">);</span><span class="w"> </span><span class="c1">// save rbp.</span>
+<span class="w">    </span><span class="n">mov_reg_reg</span><span class="p">(</span><span class="n">RBP</span><span class="p">,</span><span class="w"> </span><span class="n">RSP</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// sub RSP, &lt;const_value&gt;</span>
+<span class="w">    </span><span class="n">emit_rex</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">    </span><span class="n">push_int8</span><span class="p">(</span><span class="mh">0x81</span><span class="p">);</span>
+<span class="w">    </span><span class="n">emit_modrm</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="n">RSP</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Stack size needs to be filled in later, return a pointer.</span>
+<span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="o">*</span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">uint32_t</span><span class="o">*</span><span class="p">)((</span><span class="kt">void</span><span class="o">*</span><span class="p">)</span><span class="n">result_buffer</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">result_size</span><span class="p">);</span>
+<span class="w">    </span><span class="n">push_int32</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span><span class="w"> </span><span class="c1">// place holder value.</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">compile_exp_function_dec</span><span class="p">(</span><span class="n">current</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="p">...</span>
+
+<span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="o">*</span><span class="n">stack_size_location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">emit_prolog</span><span class="p">();</span>
+
+<span class="w">    </span><span class="p">...</span><span class="w"> </span><span class="p">(</span><span class="n">compiling</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">function</span><span class="p">)</span>
+
+<span class="w">    </span><span class="c1">// Fill in the stack size.</span>
+<span class="w">    </span><span class="o">*</span><span class="n">stack_size_location</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">stack_size</span><span class="p">;</span>
+</code></pre></div>
+
+<h2 id="implementing-binary-operators">Implementing binary operators</h2>
+<p>The <code>add_slots</code> function that was referenced in the operator table is as follows. Remember that this function will be called by <code>compile_expression_</code>. It takes in two stack offsets <code>a</code> and <code>b</code> and returns another stack offset containing the result value.</p>
+<div class="codehilite"><pre><span></span><code><span class="n">slot_t</span><span class="w"> </span><span class="nf">add_slots</span><span class="p">(</span><span class="n">slot_t</span><span class="w"> </span><span class="n">slot_a</span><span class="p">,</span><span class="w"> </span><span class="n">slot_t</span><span class="w"> </span><span class="n">slot_b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">slot_t</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">copy_slot</span><span class="p">(</span><span class="n">slot_a</span><span class="p">);</span><span class="w"> </span><span class="c1">// copy the value a into a new stack slot.</span>
+<span class="w">    </span><span class="n">load_slot</span><span class="p">(</span><span class="n">slot_b</span><span class="p">,</span><span class="w"> </span><span class="n">RAX</span><span class="p">);</span><span class="w"> </span><span class="c1">// mov RAX, [rbp + slot_b]</span>
+
+<span class="w">    </span><span class="c1">// add [rbp + result], RAX</span>
+<span class="w">    </span><span class="n">emit_rex</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+<span class="w">    </span><span class="n">push_int8</span><span class="p">(</span><span class="mh">0x01</span><span class="p">);</span><span class="w">  </span><span class="c1">//opcode</span>
+<span class="w">    </span><span class="n">modrm_slot</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="n">RAX</span><span class="p">);</span>
+
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>I won't show all of the instructions as  I said before, if you are curious please check the source code.</p>
+<h2 id="calling-functions">Calling functions</h2>
+<p>We can look at the instruction reference and find the encoding for the "call" instruction. We can see that there are several variations of the call instruction. I preferred to go with <code>CALL r/m64</code> since others work relative to the program counter position. And since we don't know where the kernel will allocate the executable memory, we don't actually know what the PC is going to be at a given position in the program. I could fix this by putting a temporary value and fixing it during linking, but I wanted to keep the linking very simple by using absolute positions. We can see that the variation we chose is encoded as <code>FF /2</code> meaning that the opcode is <code>0xFF</code> and <code>/2</code> means that there is a ModRM with the <code>regop</code> being 0x2.</p>
+<h3 id="finding-pointers-of-external-functions">Finding pointers of external functions</h3>
+<p>We want to be able to call LibC functions such as puts, printf, scanf etc as well as other functions from other libraries.
+To find the address of an external function, we can use the <code>dlsym</code> function. For example:</p>
+<div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">dlHandle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dlopen</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">RTLD_NOW</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">putsFunction</span><span class="p">)(</span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dlsym</span><span class="p">(</span><span class="n">dlHandle</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;puts&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">putsFunction</span><span class="p">(</span><span class="s">&quot;Hello function&quot;</span><span class="p">);</span>
+</code></pre></div>
+
+<h3 id="passing-arguments">Passing arguments</h3>
+<p>We now know the address of a function, but how will we pass arguments to it ?</p>
+<p>To know where to put argument, we need to look at the calling convention. Linux uses the System V Application Binary Interface. And for X86 we need to look at <a href="https://refspecs.linuxbase.org/elf/x86_64-abi-0.99.pdf">System V Application Binary Interface AMD64 Architecture Processor Supplement</a>.</p>
+<p><strong>TLDR:</strong> For integer and pointer types we can use <strong>RDI</strong>, <strong>RSI</strong>, <strong>RDX</strong>, <strong>RCX</strong>, <strong>R8</strong>, <strong>R9</strong> in that exact order, and the result value is used in the <strong>RAX</strong> register. Since we keep everything in stack, we don't have to worry about callee and caller saved registers.</p>
+<h3 id="constructing-a-hello-world-program">Constructing a hello world program</h3>
+<p>Let's write a program that generates a function that calls the <code>puts</code> function and passes a hello world message as an argument.</p>
+<div class="codehilite"><pre><span></span><code><span class="w">  </span><span class="p">...</span>
+<span class="w">    </span><span class="c1">// We don&#39;t need to setup a stack frame since we are not storing anything in the stack.</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">putsFunction</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dlsym</span><span class="p">(</span><span class="n">dlHandle</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;puts&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="n">store_const_in_reg</span><span class="p">(</span><span class="n">RAX</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">uint64_t</span><span class="p">)</span><span class="n">putsFunction</span><span class="p">);</span>
+
+<span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="n">msg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;Hello world&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="c1">// Store the call argument in RDI, as required by the application binary interface.</span>
+<span class="w">    </span><span class="n">store_const_in_reg</span><span class="p">(</span><span class="n">RDI</span><span class="p">,</span><span class="w"> </span><span class="p">(</span><span class="kt">uint64_t</span><span class="p">)</span><span class="n">msg</span><span class="p">);</span>
+<span class="w">    </span><span class="n">push_int8</span><span class="p">(</span><span class="mh">0xFF</span><span class="p">);</span>
+<span class="w">    </span><span class="n">emit_modrm</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="w"> </span><span class="cm">/* Intel requires us that have 2 here. */</span><span class="p">,</span><span class="w"> </span><span class="n">RAX</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">push_int8</span><span class="p">(</span><span class="mh">0xC3</span><span class="p">);</span><span class="w"> </span><span class="c1">// Ret instruction.</span>
+
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">executable</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">allocate_executable</span><span class="p">(</span><span class="n">result_size</span><span class="p">);</span><span class="w"> </span><span class="c1">// allocate executable memory with mmap.</span>
+<span class="w">    </span><span class="n">memcpy</span><span class="p">(</span><span class="n">executable</span><span class="p">,</span><span class="w"> </span><span class="n">result_buffer</span><span class="p">,</span><span class="w"> </span><span class="n">result_size</span><span class="p">);</span>
+
+<span class="w">    </span><span class="p">((</span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="p">)())</span><span class="n">executable</span><span class="p">)();</span><span class="w"> </span><span class="c1">// Call the executable code !!</span>
+</code></pre></div>
+
+<h2 id="handling-control-flow">Handling Control flow</h2>
+<p>To compile an if block, we compile the conditional expression. compare it's value to zero, and if the value is zero we jump over the code block where the contents of the if block is located. One small problem is that we don't know the length of the code block since we haven't even parsed it yet !</p>
+<p>What we can do instead is temporary emit zero, and fill in the value later.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// Return value is a pointer to the relative offset in the emitted code.</span>
+<span class="kt">uint32_t</span><span class="o">*</span><span class="w"> </span><span class="nf">jump_zero_offset</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">push_int8</span><span class="p">(</span><span class="mh">0x0f</span><span class="p">);</span><span class="w"> </span><span class="c1">// JZ rel32</span>
+<span class="w">    </span><span class="n">push_int8</span><span class="p">(</span><span class="mh">0x84</span><span class="p">);</span>
+<span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="o">*</span><span class="n">jump_offset_point</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">uint32_t</span><span class="o">*</span><span class="p">)(</span><span class="n">result_buffer</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">result_size</span><span class="p">);</span>
+<span class="w">    </span><span class="n">push_int32</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span><span class="w"> </span><span class="c1">// will be replaced later.</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">jump_offset_point</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<div class="codehilite"><pre><span></span><code><span class="kt">void</span><span class="w"> </span><span class="nf">compile_if</span><span class="p">(</span><span class="kt">char</span><span class="w"> </span><span class="o">**</span><span class="n">current</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">skip_gap</span><span class="p">(</span><span class="n">current</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">assert_compilation</span><span class="p">(</span><span class="o">**</span><span class="n">current</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="sc">&#39;(&#39;</span><span class="p">);</span>
+<span class="w">    </span><span class="p">(</span><span class="o">*</span><span class="n">current</span><span class="p">)</span><span class="o">++</span><span class="p">;</span>
+<span class="w">    </span><span class="c1">// compile the condition.</span>
+<span class="w">    </span><span class="n">slot_t</span><span class="w"> </span><span class="n">condition</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">compile_expression</span><span class="p">(</span><span class="n">current</span><span class="p">);</span>
+
+<span class="w">    </span><span class="n">assert_compilation</span><span class="p">(</span><span class="o">**</span><span class="n">current</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="sc">&#39;)&#39;</span><span class="p">);</span>
+<span class="w">    </span><span class="p">(</span><span class="o">*</span><span class="n">current</span><span class="p">)</span><span class="o">++</span><span class="p">;</span>
+
+<span class="w">    </span><span class="n">cmp_imm</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
+
+<span class="w">    </span><span class="c1">// Jump to end of block if the condition is not met.</span>
+<span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="o">*</span><span class="n">jump_offset_point</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">jump_zero_offset</span><span class="p">();</span>
+
+<span class="w">    </span><span class="c1">// Relative offsets are relative to the end of the instruction.</span>
+<span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">body_begin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">result_size</span><span class="p">;</span>
+
+<span class="w">    </span><span class="c1">// Compile the contents of the if block.</span>
+<span class="w">    </span><span class="n">compile_exp_st_block</span><span class="p">(</span><span class="n">current</span><span class="p">);</span>
+<span class="w">    </span><span class="c1">// Fill in the jump offset</span>
+<span class="w">    </span><span class="o">*</span><span class="n">jump_offset_point</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">result_size</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">body_begin</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>Handling a while loop is just the same, except that you have a jmp to the point where you evaluate the condition</p>
+<h2 id="static-linking">Static Linking</h2>
+<p>When handling the compilation of an if block we had to fill in the value of <code>jump_offset_point</code> later because we didn't knew it's offset yet. This is called a forwards reference. In this particular case since there is only one reference to the unknown address we just used a pointer. But there are cases where there could be arbitrary number of references to unknown positions in our program. </p>
+<p>To give examples:</p>
+<p><strong>Forward declarations of local functions:</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="c1">// this is how we do forwards declarations btw.</span>
+<span class="w">    </span><span class="n">funA</span><span class="p">()</span><span class="w"> </span><span class="p">{}</span>
+
+<span class="w">    </span><span class="n">funB</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">funA</span><span class="p">();</span><span class="w"> </span><span class="c1">// we don&#39;t know the actual address of funA !</span>
+<span class="w">        </span><span class="n">funA</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="n">funA</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">puts</span><span class="p">(</span><span class="s">&quot;I am the real funA.&quot;</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Return statments:</strong> 
+To implement the return statement we must evaluate the returned expression, move the result to <code>RAX</code> and the jump to the end of the function (we can't just have a <code>ret</code> instruction because we need to clean the stack).</p>
+<div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="n">test</span><span class="p">(</span><span class="n">a</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">a</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">321</span><span class="w"> </span><span class="p">)</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="mi">35</span><span class="p">;</span><span class="w"> </span><span class="c1">// we don&#39;t know where the end of the function is !</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">a</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">123</span><span class="p">)</span>
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="mi">30</span><span class="p">;</span><span class="w"> </span><span class="c1">// we don&#39;t know where the end of the function is !</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="mi">123</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+</code></pre></div>
+
+<p><strong>Break statments:</strong> </p>
+<div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="n">test</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">100</span><span class="p">;</span>
+<span class="w">        </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span>
+<span class="w">                </span><span class="k">break</span><span class="p">;</span><span class="w"> </span><span class="c1">// we don&#39;t actually know where the end of the loop is !</span>
+<span class="w">            </span><span class="n">printf</span><span class="p">(</span><span class="s">&quot;i: %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">i</span><span class="p">);</span>
+<span class="w">            </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+<span class="w">        </span><span class="p">}</span><span class="w">        </span>
+<span class="w">    </span><span class="p">}</span>
+</code></pre></div>
+
+<p>Since there could be arbitrary number of references, we can't get away with a simple pointer this time. We need to keep a list of references to a particular unknown value, this is called a relocation list. At the end of compilation we go over the list of relocations and fill in the real values.</p>
+<div class="codehilite"><pre><span></span><code><span class="c1">// local variable or symbol.</span>
+<span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="n">name</span><span class="p">[</span><span class="n">MAX_VAR_NAME_LENGTH</span><span class="p">];</span>
+<span class="w">    </span><span class="k">union</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">slot</span><span class="p">;</span><span class="w"> </span><span class="c1">// Slot offset of local variable.</span>
+<span class="w">        </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">value</span><span class="p">;</span><span class="w"> </span><span class="c1">// Sym value. only for globals syms, must be filled before linking.</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">is_function</span><span class="p">;</span><span class="w"> </span><span class="c1">// Function symbols need special handling.</span>
+<span class="p">}</span><span class="w"> </span><span class="n">sym_t</span><span class="p">;</span>
+
+<span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">sym_t</span><span class="w"> </span><span class="o">*</span><span class="n">global_sym</span><span class="p">;</span><span class="w"> </span><span class="c1">// symbol that we are referencing. </span>
+<span class="w">    </span><span class="kt">bool</span><span class="w"> </span><span class="n">is_relative</span><span class="p">;</span><span class="w"> </span><span class="c1">// is this a rel32 or imm64.</span>
+<span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">result_point</span><span class="p">;</span><span class="w"> </span><span class="c1">// where the value has to be written.</span>
+<span class="p">}</span><span class="w"> </span><span class="n">reloc_t</span><span class="p">;</span>
+
+<span class="c1">// Local variables.</span>
+<span class="n">sym_t</span><span class="w"> </span><span class="n">local_syms</span><span class="p">[</span><span class="n">MAX_SYMS</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{};</span>
+<span class="kt">size_t</span><span class="w"> </span><span class="n">local_sym_count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="c1">// functions or control flow offsets.</span>
+<span class="n">sym_t</span><span class="w"> </span><span class="n">global_syms</span><span class="p">[</span><span class="n">MAX_SYMS</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{};</span>
+<span class="kt">size_t</span><span class="w"> </span><span class="n">global_sym_count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="cp">#define MAX_RELOC_COUNT 5000</span>
+<span class="n">reloc_t</span><span class="w"> </span><span class="n">relocations</span><span class="p">[</span><span class="n">MAX_RELOC_COUNT</span><span class="p">];</span>
+<span class="kt">size_t</span><span class="w"> </span><span class="n">reloc_count</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
+
+<span class="c1">// Called at the end of compilation.</span>
+<span class="kt">void</span><span class="w"> </span><span class="nf">apply_relocs</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">reloc_count</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="o">++</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">reloc_t</span><span class="w"> </span><span class="o">*</span><span class="n">reloc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&amp;</span><span class="n">relocations</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<span class="w">        </span><span class="c1">// Apply relocation.</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">reloc</span><span class="o">-&gt;</span><span class="n">is_relative</span><span class="p">)</span>
+<span class="w">            </span><span class="o">*</span><span class="p">(</span><span class="kt">uint64_t</span><span class="o">*</span><span class="p">)(</span><span class="n">reloc</span><span class="o">-&gt;</span><span class="n">result_point</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">reloc</span><span class="o">-&gt;</span><span class="n">global_sym</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">;</span>
+<span class="w">        </span><span class="k">else</span>
+<span class="w">            </span><span class="o">*</span><span class="p">(</span><span class="kt">uint32_t</span><span class="o">*</span><span class="p">)(</span><span class="n">reloc</span><span class="o">-&gt;</span><span class="n">result_point</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">reloc</span><span class="o">-&gt;</span><span class="n">global_sym</span><span class="o">-&gt;</span><span class="n">value</span><span class="w"> </span><span class="o">-</span>
+<span class="w">                </span><span class="p">(</span><span class="kt">size_t</span><span class="p">)((</span><span class="kt">uint8_t</span><span class="o">*</span><span class="p">)</span><span class="n">reloc</span><span class="o">-&gt;</span><span class="n">result_point</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">result_buffer</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">4</span><span class="p">;</span>
+
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h2 id="variable-handling">Variable Handling</h2>
+<p>I think implementing variables are simple. We just need to keep a map between a stack slot and variable name. And in the <code>compile_atom</code> function, if we see a variable, we just have to look it up in the variables array.</p>
+<div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="n">compile_exp_atom_</span><span class="p">(</span><span class="n">current</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="p">...</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">isalpha</span><span class="p">(</span><span class="n">c</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">read_ident</span><span class="p">(</span><span class="n">current</span><span class="p">);</span>
+
+<span class="w">            </span><span class="c1">// Check if a local variable first.</span>
+<span class="w">            </span><span class="n">sym_t</span><span class="w"> </span><span class="o">*</span><span class="n">var</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">resolve_sym</span><span class="p">(</span><span class="n">local_syms</span><span class="p">,</span><span class="w"> </span><span class="n">local_sym_count</span><span class="p">,</span><span class="w"> </span><span class="n">ident_buffer</span><span class="p">);</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
+<span class="w">                </span><span class="k">return</span><span class="w"> </span><span class="n">var</span><span class="o">-&gt;</span><span class="n">slot</span><span class="p">;</span>
+
+<span class="w">            </span><span class="c1">// is this is a function pointer reference ?</span>
+<span class="w">            </span><span class="n">sym_t</span><span class="w"> </span><span class="o">*</span><span class="n">global_sym</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">resolve_sym</span><span class="p">(</span><span class="n">global_syms</span><span class="p">,</span><span class="w"> </span><span class="n">global_sym_count</span><span class="p">,</span><span class="w"> </span><span class="n">ident_buffer</span><span class="p">);</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">global_sym</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="n">mov_reg_global</span><span class="p">(</span><span class="n">RAX</span><span class="p">,</span><span class="w"> </span><span class="n">global_sym</span><span class="p">);</span>
+<span class="w">                </span><span class="n">slot_t</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">slot_alloc</span><span class="p">();</span>
+<span class="w">                </span><span class="n">mov_slot_reg</span><span class="p">(</span><span class="n">result</span><span class="p">,</span><span class="w"> </span><span class="n">RAX</span><span class="p">);</span>
+
+<span class="w">                </span><span class="k">return</span><span class="w"> </span><span class="n">result</span><span class="p">;</span>
+<span class="w">            </span><span class="p">}</span>
+
+<span class="w">            </span><span class="c1">// External function.</span>
+<span class="w">            </span><span class="kt">uint64_t</span><span class="w"> </span><span class="n">handle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">uint64_t</span><span class="p">)</span><span class="n">dlsym</span><span class="p">(</span><span class="n">dlHandle</span><span class="p">,</span><span class="w"> </span><span class="n">ident_buffer</span><span class="p">);</span>
+<span class="w">            </span><span class="n">critical_check_msg</span><span class="p">(</span><span class="n">handle</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;Variable not found&quot;</span><span class="p">);</span>
+
+<span class="w">            </span><span class="k">return</span><span class="w"> </span><span class="n">mov_slot_const</span><span class="p">(</span><span class="n">handle</span><span class="p">);</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">        </span><span class="p">...</span>
+<span class="w">    </span><span class="p">}</span>
+</code></pre></div>
+
+<h1 id="conclusion">Conclusion</h1>
+<p>I think the contents in this article should be enough ammunition for you to build esoteric compilers of your own. </p>
+<p>In this article I mainly focused on practical stuff and I strongly suggest that you read text books on compilers if you want to learn more about the more advanced or theoretical subjects. I enjoyed reading "Engineering a Compiler 2nd Edition by Keith D. Cooper (Author), Linda Torczon".</p>
+<p>If you think there where any errors in the article, feel free to send me an email (you can find it in the index page).</p>
+<h1 id="things-you-can-do-to-extend-this-simple-compiler">Things you can do to extend this simple compiler</h1>
+<ul>
+<li>Add more language features (add else if, for loops etc) (<span style="color: green;">easy</span>).</li>
+<li>Port it to other architectures (<span style="color: red;">hard</span>).</li>
+<li>Instead of executing it jit, write the output into an elf file (<span style="color: yellow;">medium</span>).</li>
+<li>Add support for other types, such as floating point numbers. You need to figure out how encode floating point instructions, and extend the compiler to support different variable types.  (<span style="color: yellow;">medium</span>).</li>
+<li>Instead of emitting assembly directly, figure out how to emit LLVM IR instead (<span style="color: yellow">medium</span>).</li>
+</ul>
+    </p>
+    </article>
+        </main>
+        <footer id='footer'>
+                <span>Kuter Dinel 2023 | Last Updated: 23-09-2023 | Blog Commit Hash: 94bc444 </span>
+        </footer>
+    </div>
+</body>

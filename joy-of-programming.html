@@ -1,14 +1,19 @@
 <!DOCTYPE html>
-<html lang=''>
+<html lang='en'>
 <head>
     <meta name="author" content="Kuter Dinel">
-    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no">
     <style>
     </style>
     <link rel="stylesheet" href="highlight.css">
     <link rel="stylesheet" href="style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
-    <title> Joy of programming</title>
+    <title>Joy of programming • Kuter Dinel's blog</title>
+
     <meta name="description" content="Becoming a professional & Joy that programming brings">
     <script>
         MathJax = {
@@ -22,6 +27,7 @@
     </script>   
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
 </head>
 <body>
     <div id='center'>
@@ -33,7 +39,7 @@
     <article>
     <header>
     <h1> Joy of programming</h1>
-    <i style="float:right;">on <strong>23-04-2023</strong> by <strong>Kuter Dinel</strong>.</i></br>
+    <i style="float:right;">on <strong>23.04.2023</strong> by <strong>Kuter Dinel</strong>.</i></br>
     </header>
     <p>
     <style>
@@ -48,10 +54,22 @@
     button:hover {
         background-color: #F0F0F0;
     }
+
+    @media screen and (max-width: 500px) {
+        .visualization-holder {
+            width: 100% !important;
+        }
+
+        #canvas {
+            width: 100%;
+        }
+    }
+
+
 </style>
 
 <script src="orbit.js"></script>
-<div style="margin: auto; display: block; width:500px;">
+<div class="visualization-holder" style="margin: auto; display: block; width:500px;">
     <canvas id="canvas">Your browser sadly doesn't support canvas elements, sob sob</canvas>
     <p>
         <button onclick="load_k_scene()">Load 'K'</button>
@@ -72,7 +90,7 @@
 <p>More than a decade has passed and as I transition to become a professional  I have to deal with home-works, Jira tickets, tasks, bugs etc and it can tiring sometimes.</p>
 <p>But even after so many years whenever I create something I couldn't the day before, whenever I figure out something I couldn't understand before, it feels the same. I get the same joy from working on more complicated and theoretical projects such as compilers.</p>
 <p>And there is still so many things to learn ... </p>
-<h2>How does the demo above work</h2>
+<h2 id="how-does-the-demo-above-work">How does the demo above work</h2>
 <p>The gravitational force between two objects is defined as:
 $$F = G\frac{m_1m_2}{r^2}$$</p>
 <p>Where \(G\) is the gravitational constant,\(m_1\) and \(m_2\) are the masses of the objects and \(r\) is the distance between the two objects.
@@ -84,7 +102,7 @@ The direction of the force for both objects is towards each other.</p>
     </article>
         </main>
         <footer id='footer'>
-                <span>Kuter Dinel 2023 | Last Updated: 29-07-2023 | Blog Commit Hash: 8845396 </span>
+                <span>Kuter Dinel 2023 | Last Updated: 23-09-2023 | Blog Commit Hash: 94bc444 </span>
         </footer>
     </div>
 </body>
