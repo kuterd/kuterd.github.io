@@ -2,7 +2,7 @@
 
 Personally, I love how writing compilers requires a combination of both practical and theoretical knowledge.
 
-In this project we will be building a jit compiler for a very small subset of C to gain confidence in recursive descent parsing and generating machine code programmatically. I wanted to build the most basic compiler that I can. I think it is often important to build the most simplest solution to problem before developing more complicated solutions. Building the simplest compiler will show us some of the problems we are going to encounter with more advanced compilers. 
+In this project, we will be building a JIT (Just-In-Time) compiler for a very small subset of C to gain confidence in recursive descent parsing and generating machine code programmatically. I tried to keep the compiler as basic as possible because I believe it's important to start with the simplest solution before moving on to more complex ones. Building a very simple compiler will show us some of the problems we are going to encounter with more advanced compilers.
 
 As a side note, I am currently building a more complicated compiler that uses the __Single Static Assignment__ form and also does proper-ish register allocation, I will try to write about some of the algorithms that I implemented when I finish it, but it still needs a lot of work.
  
@@ -10,7 +10,7 @@ As a side note, I am currently building a more complicated compiler that uses th
 
 [TOC]
 
-## The basic anatomy of a compiler
+## The basic anatomy of a compiler (optional)
 
 We don't really have to worry about any of this, this is just to give you an idea, may be slightly inaccurate.
 
@@ -39,14 +39,14 @@ The simplifications of our compiler (Micro C)
 
 * Horribly inefficient machine code generation.
 * No types, every type is a 64-bit integer, floating point numbers and structs are not supported.
-* Every value is stored in stack, registers are not utilized properly.
+* Every value is stored in the stack, registers are not utilized properly.
 * No [Intermediate Representation](https://en.wikipedia.org/wiki/Intermediate_representation) or [Abstract Syntax Tree](https://en.wikipedia.org/wiki/Abstract_syntax_tree). Code generation combined with parsing.
 
 Please note that these simplifications significantly reduces the quality of the code that we generate. Modern compilers are often millions of lines of code compared to our ~1000 lines.
 
 ## Tokenization(Lexing)
 
-It's  useful that we think of the code as a series of tokens. Tokens are like words. We essentially assign each token a class like; identifier, number, left parenthesis, right parenthesis, operator etc. This helps us understand the contents of code (which is just text) and makes it easier for us to parse it later.
+It's useful that we think of the code as a series of tokens. Tokens are like words. We essentially assign each token a class like; identifier, number, left parenthesis, right parenthesis, operator, etc. This helps us understand the contents of code (which is just text) and makes it easier for us to parse it later.
 
 Essentially tokenizer takes in text in the __form of:__
 ```c
@@ -59,9 +59,10 @@ __And outputs:__
 ```
 {<identifier(asd)>, <l_paran>, <r_paran>, <l_brace>, <r_brace> ... }
 ```
-That's easier to understand than `{'a', 's', 'd', ' ', '(', ')', ...}` right ?
+That's easier to understand than `{'a', 's', 'd', ' ', '(', ')', ...}` right ?  
 
-Sometimes it may be favorable to have the tokenizer as a separate competent, especially if it involves complex logic. Since my tokenizer only needs one character to determine token type in most cases, I opted to not have a separate tokenizer and just __combined tokenization and parsing__. 
+
+It makes sense to have tokenizer as a separate component if it involved complex logic. But since my tokenizer only needs one character to determine token type in most cases, I opted to not have a separate tokenizer and just __combined tokenization and parsing__. 
 
 __To give an example on how we can combine tokenization and parsing:__ 
 ```C
@@ -85,9 +86,9 @@ It's as simple as that !
 
 ## Recursive descent parsing
 
-Most modern compilers (clang, gcc, etc) doesn't use parser generators and instead use handwritten(🧿)  recursive descent parsers. I think once it "clicks" in your mind it be trivial to write any recursive descent parser you want !
+Most modern compilers (clang, gcc, etc) don't use parser generators and instead use handwritten(🧿)  recursive descent parsers. I think once it "clicks" in your mind it be trivial to write any recursive descent parser you want !
 
-For example let's imagine that a function can be defined like in the example below.
+For example, let's imagine that a function can be defined like in the example below.
 
 ```C
 asd (a, b) {
@@ -175,7 +176,7 @@ I think the most of difficult part of parsing is to get operator precedence pars
 #### Simple operator precedence parsing
 
 Let's start by writing a function to only parse multiplication and division operations. Since both multiplication and division have the same precedence, we just have to ensure that it's parsed left to right.
-Also we have to consider that a number by itself is a valid expression(like "123"). Meaning that we need to be able to handle that case as well. We will return if we ever see a operator that is not the correct precedence level.
+Also, we have to consider that a number by itself is a valid expression(like "123"). Meaning that we need to be able to handle that case as well. We will return if we ever see an operator that is not the correct precedence level.
 
 ```C
 // Parse multiplication, division or just an atom value.
@@ -239,7 +240,7 @@ parse_add (reader) {
 
 #### Generalized operator precedence parsing and compilation
 As you might have seen, the `parse_multiply` and `parse_add` functions share too much in common, and since we will have multiple levels of operator precedences, our code would get really ugly real quick.
-We can generalize the binary operator parsing such that it's very easy to add new operators.
+We can generalize the binary operator parsing to make it very easy to add new operators.
 
 ```C
 
@@ -311,12 +312,12 @@ compile_expression_(reader, precedence) {
 }
 ```
 
-The `parse_atom` function parses an integer, string, expression in parenthesis. For int and string values, the ` parse_atom` function emits assembly to store the constant value in stack and returns the stack position corresponding to the position where the value is stored.
+The `parse_atom` function parses an integer, string, or expression in parenthesis. For int and string values, the ` parse_atom` function emits assembly to store the constant value in the stack and returns the stack position corresponding to the position where the value is stored.
 
-As described in the comments `compile_operator_t` is a function pointer that takes in stack positions of input values and generates assembly to do the operation, and returns the stack slot where the result value will be stored. I will show the implementation of these functions later.
+As described in the comments `compile_operator_t` is a function pointer that takes in stack positions of input values and generates assembly to do the operation, and returns the stack slot where the result value is stored. I will show the implementation of these functions later.
 
 # Allocating Executable memory
-The processor will reject to execute code located in pages that are not marked as executable, and under normal circumstances the memory that we allocate is not marked as executable. This is a security feature to try to make it more difficult to build exploits.
+The processor will reject to execute code located in pages that are not marked as executable, and in modern operating systems, the memory that we allocate is not marked as executable. This is a security feature to try to make it more difficult to build exploits.
 We need to ask the kernel specifically to map executable memory to our process.
 
 This is how you do it linux:
@@ -335,11 +336,11 @@ This is how you do it linux:
 
 Please note that I will try to port the code to arm whenever I have time. But I wanted to start with x86.
 
-The x86 architecture has it's roots to 1970's. And a modern x86 CPU can still execute an 16-bit operating system that was build in 1980's. Being so old and so backwards compatible does have some caveats. Encoding x86 instructions is kinda __difficult__ and frankly it took me a long time to understand.
+The x86 architecture has its in 1970s. And a modern x86 CPU can still execute a 16-bit operating system that was built in the 1980s. Being so old and so backward compatible does have some caveats. Encoding x86 instructions is kinda __difficult__ and frankly it took me a long time to understand.
 
-Intel's [Architecture Software Developer Manual](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html) describes the x86 architecture in detail, including how to encode each instructions. I strongly suggest that you take a look because I won't go over how each instruction we use is encoded.
+Intel's [Architecture Software Developer Manual](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html) describes the x86 architecture in detail, including how to encode each instruction. I strongly suggest that you take a look because I won't go over how each instruction we use is encoded.
 
-Let's take a look at how to encode a simple `ADD` instruction. The `ADD` instruction is listed under  Chapter 3 of the Volume 2 of the Architecture Software Developer Manual.  We can see that there is a table.
+Let's take a look at how to encode a simple `ADD` instruction. The `ADD` instruction is listed under  Chapter 3 of Volume 2 of the Architecture Software Developer Manual.  We can see that there is a table.
 
  Opcode             | Instructions      
 --------------------|-------------------
@@ -351,17 +352,18 @@ Let's take a look at how to encode a simple `ADD` instruction. The `ADD` instruc
  REX.W + 01 /r      | ADD r/m64, r64    
  ...                | ...               
 
-!!! note "I  suggest that you take look at Chapter 2 of Architecture Software Developer which describes the instruction format and also the first part of Chapter 3 which describes how to interpret the instruction listings."
+!!! note "I suggest that you take look at Chapter 2 of Architecture Software Developer which describes the instruction format and also the first part of Chapter 3 which describes how to interpret the instruction listings."
 
 We are specifically interested in the `ADD r/m64, r64` variation of the instruction. `r/m64` means that one of the operands is ModRM which I will explain later. And `r64` means that the other operand is a 64-bit register.
 
-And although we can guess that 01 means 0x01 in hex what does `/r` mean, "/r" means that the second register operand is encoded as a part of the ModRM byte. 
+And although we can guess that 01 means 0x01 in hex what does `/r` mean ? "/r" means that the second register operand is encoded as a part of the ModRM byte. 
 
-Also here seems to be 3 different instructions that use the same encoding.
-As I said before, a modern x86 processor can run an 16-bit operating system. Meaning that the processor has a 16-bit mode. And when you use the `01 /r` encoding the processor can interpret that as a 16-bit instruction if it's running in 16-bit mode. The 16-bit instruction is still usable in 64-bit mode however, you need to use a specific prefix, for it.
+Also, there seem to be 3 different instructions that use the same encoding.
 
-What does the `REX.W` in `REX.W + 01 /r`  mean ?
-Differently from the 16-bit mode, instructions are 32-bit by default in 64-bit mode, and we need to use the REX prefix in order to access the 64-bit mode instruction. I believe this is for backwards compatibility (you can run a 32-bit program in a 64-bit mode through special compatibility mode).
+As I said before, a modern x86 processor can run a 16-bit operating system. Meaning that the processor has a 16-bit mode. And when you use the `01 /r` encoding the processor can interpret that as a 16-bit instruction if it's running in 16-bit mode. The 16-bit instruction is still usable in 64-bit mode however, you need to use a specific prefix, for it.
+
+Next, what does the `REX.W` in `REX.W + 01 /r`  mean ?
+Differently from the 16-bit mode, instructions are 32-bit by default in 64-bit mode, and we need to use the REX prefix in order to access the 64-bit mode instruction. I believe this is for backward compatibility (you can run a 32-bit program in a 64-bit mode through special compatibility mode).
 
 The REX prefix can be encoded with the function below.
 
@@ -381,14 +383,14 @@ As specified in the comment, we need to give `1` to the W field to make the inst
 
 ## What is ModRM.
 ModRM is what makes x86 a CISC (Complex Instruction Set Computer) architecture. ModRM allows a single opcode to have different addressing modes.
-The `/` in the `REX.W + 01 /r` means that this instruction uses the __ModRM__ byte.
+The `/` in the `REX.W + 01 /r` means that, this instruction uses the __ModRM__ byte.
 
 The __ModRM__ byte has 3 parts.
 * __mod__ Specifies which addressing mode we are using.
 * __regop__ Either register for other side or a __constant value for unary operations__ (`/1` etc).
 * __rm__ Register used for the addressing mode.
 
-Please note that for unary instructions the encoding will be like `/4` which means that the constant value 4 must be put inside the regop. An example of this is shown with the encoding of the `call r/m64` instruction.  
+Please note that for unary, instructions the encoding will be like `/4` which means that regop must be 4. An example of this is shown with the encoding of the `call r/m64` instruction.
 
 The code below encodes the __ModRM__ byte.
 ```c
@@ -400,12 +402,12 @@ The code below encodes the __ModRM__ byte.
 
  Mod | Addressing mode| Meaning   
 -----|----------------|----------
-  0  | [rm]           | Value of the memory address pointed by the register `rm`
-  1  | [rm + disp8]   | Value of the memory address pointed by the register `rm` plus an offset.
-  2  | [rm + disp32]  | Same as above but a 32-bit offset instead of 8-bits.
+  0  | [rm]           | Value in memory addressed by register `rm`.
+  1  | [rm + disp8]   | Value in memory addressed by, register`rm` plus an offset.
+  2  | [rm + disp32]  | Same as above but a 32-bit offset instead of 8-bit.
   3  | rm             | Just value in the register. 
 
-I said that `rm` is the register and `regop` is sometimes used as a register but which value corresponds to which register ? We can use the table bellow.
+I said before that `rm` is the register and `regop` is sometimes used as a register but which value corresponds to which register ? We can use the table bellow.
 
  Register  | Code | Notes 
 -----------|------|-------
@@ -453,7 +455,7 @@ Disassembly of section .data:
    0:   48 01 cd                add    rcx,rdx
 ```
 
-Yaay ! Let's try to encode `ADD [RCX], RDX` this will add RDX to the value in the address pointed in RCX.
+Yaay ! Let's try to encode `ADD [RCX], RDX` this will add RDX to the value in memory addressed by register `rm`.
 
 ```c
     emit_rex(1, 0, 0, 0);
@@ -461,7 +463,7 @@ Yaay ! Let's try to encode `ADD [RCX], RDX` this will add RDX to the value in th
     emit_modrm(0, RCX, RDX); // mod type changed !
 ```
 
-Now let's try something a little bit more difficult, as I said before, we will be storing all values in stack. So let's try RBP (Frame pointer) relative addressing. This is the __most important one__ because we will be primarily using this addressing mode.
+Now let's try something a little bit more difficult, as I said before, we will be storing all values in the stack. So let's try RBP (Frame pointer) relative addressing. This is the __most important one__ because we will be primarily using this addressing mode.
 
 `ADD [RBP - offset], RCX`
 
@@ -493,7 +495,7 @@ void store_const_in_reg(reg64 reg, uint64_t cons) {
 We looked at parsing, and encoding x86 instructions now let's put everything together.
 
 ## Setting up and cleaning stack frames
-When we enter a function, we must first setup the stack frame and on exit we must remove it. Since we will be keeping all values in stack we also need to allocate stack space. 
+When we enter a function, we must first setup the stack frame and on exit we must remove it. Since we will be keeping all values in the stack we also need to allocate stack space. 
 
 ```nasm
     push RBP ; Save the old stack frame.
@@ -539,7 +541,7 @@ compile_exp_function_dec(current) {
 
 ## Implementing binary operators
 
-The `add_slots` function that was referenced in the operator table is as follows. Remember that this function will be called by `compile_expression_`. It takes in two stack offsets `a` and `b` and returns another stack offset containing the result value.
+The `add_slots` function that was referenced in the operator table is as follows. Remember that, this function will be called by `compile_expression_`. It takes in two stack offsets `a` and `b` and returns another stack offset containing the result value.
 
 ```c
 slot_t add_slots(slot_t slot_a, slot_t slot_b) {
@@ -560,11 +562,11 @@ I won't show all of the instructions as  I said before, if you are curious pleas
 
 ## Calling functions
 
-We can look at the instruction reference and find the encoding for the "call" instruction. We can see that there are several variations of the call instruction. I preferred to go with `CALL r/m64` since others work relative to the program counter position. And since we don't know where the kernel will allocate the executable memory, we don't actually know what the PC is going to be at a given position in the program. I could fix this by putting a temporary value and fixing it during linking, but I wanted to keep the linking very simple by using absolute positions. We can see that the variation we chose is encoded as `FF /2` meaning that the opcode is `0xFF` and `/2` means that there is a ModRM with the `regop` being 0x2.
+We can look at the instruction reference and find the encoding for the "call" instruction. We can see that there are several variations of the call instruction. I preferred to go with `CALL r/m64` since we also want to support function pointers. We can see that the variation we chose is encoded as `FF /2` meaning that the opcode is `0xFF` and `/2` means that there is a ModRM with the `regop` being 0x2.
 
 ### Finding pointers of external functions
 
-We want to be able to call LibC functions such as puts, printf, scanf etc as well as other functions from other libraries.
+We want to be able to call LibC functions such as puts, printf, scanf, etc as well as other functions from other libraries.
 To find the address of an external function, we can use the `dlsym` function. For example:
 
 ```c
@@ -577,7 +579,7 @@ To find the address of an external function, we can use the `dlsym` function. Fo
 ### Passing arguments
 We now know the address of a function, but how will we pass arguments to it ?
 
-To know where to put argument, we need to look at the calling convention. Linux uses the System V Application Binary Interface. And for X86 we need to look at [System V Application Binary Interface AMD64 Architecture Processor Supplement](https://refspecs.linuxbase.org/elf/x86_64-abi-0.99.pdf).
+To know where to put the arguments, we need to look at the calling convention. Linux uses the System V Application Binary Interface. And for X86 we need to look at [System V Application Binary Interface AMD64 Architecture Processor Supplement](https://refspecs.linuxbase.org/elf/x86_64-abi-0.99.pdf).
 
 __TLDR:__ For integer and pointer types we can use __RDI__, __RSI__, __RDX__, __RCX__, __R8__, __R9__ in that exact order, and the result value is used in the __RAX__ register. Since we keep everything in stack, we don't have to worry about callee and caller saved registers.
 
@@ -606,7 +608,7 @@ Let's write a program that generates a function that calls the `puts` function a
 
 ## Handling Control flow
 
-To compile an if block, we compile the conditional expression. compare it's value to zero, and if the value is zero we jump over the code block where the contents of the if block is located. One small problem is that we don't know the length of the code block since we haven't even parsed it yet !
+To compile an if block, we compile the conditional expression, compare it's value to zero, and if the value is zero we jump over the code block where the contents of the if block is located. One small problem is that we don't know the length of the code block since we haven't even parsed it yet !
 
 What we can do instead is temporary emit zero, and fill in the value later.
 
@@ -616,6 +618,7 @@ What we can do instead is temporary emit zero, and fill in the value later.
 uint32_t* jump_zero_offset() {
     push_int8(0x0f); // JZ rel32
     push_int8(0x84);
+    //NOTE: jump_offset_point is relative to the position after the end of the jz instruction.
     uint32_t *jump_offset_point = (uint32_t*)(result_buffer + result_size);
     push_int32(0); // will be replaced later.
     return jump_offset_point;
@@ -649,10 +652,10 @@ void compile_if(char **current) {
 }
 ```
 
-Handling a while loop is just the same, except that you have a jmp to the point where you evaluate the condition
+Handling a while loop is just the same, except that you have a jmp to the point where you evaluate the condition.
 
 ## Static Linking
-When handling the compilation of an if block we had to fill in the value of `jump_offset_point` later because we didn't knew it's offset yet. This is called a forwards reference. In this particular case since there is only one reference to the unknown address we just used a pointer. But there are cases where there could be arbitrary number of references to unknown positions in our program. 
+When handling the compilation of an if block we had to fill in the value of `jump_offset_point` later because we didn't know it's offset yet. This is called a forward reference. In this particular case since there is only one reference to the unknown address we just used a pointer. But there are cases where there could be arbitrary number of references to unknown positions in our program. 
 
 To give examples:
 
@@ -698,7 +701,7 @@ __Break statments:__
     }
 ```
 
-Since there could be arbitrary number of references, we can't get away with a simple pointer this time. We need to keep a list of references to a particular unknown value, this is called a relocation list. At the end of compilation we go over the list of relocations and fill in the real values.
+Since there could be an arbitrary number of references, we can't get away with a simple pointer this time. We need to keep a list of references to a particular unknown value, this is called a relocation list. At the end of compilation, we go over the list of relocations and fill in the real values.
 
 ```c
 
@@ -747,7 +750,7 @@ void apply_relocs() {
 
 
 ## Variable Handling
-I think implementing variables are simple. We just need to keep a map between a stack slot and variable name. And in the `compile_atom` function, if we see a variable, we just have to look it up in the variables array.
+To implement variables, we just need to keep a map between stack slots and variable names. In the `compile_atom` function, to compile a variable, we just have to look it up in the variables array.
 
 ```c
     compile_exp_atom_(current) {
@@ -782,9 +785,9 @@ I think implementing variables are simple. We just need to keep a map between a 
 ```
 
 # Conclusion
-I think the contents in this article should be enough ammunition for you to build esoteric compilers of your own. 
+The contents in this article should be enough ammunition for you to build esoteric compilers of your own. 
 
-In this article I mainly focused on practical stuff and I strongly suggest that you read text books on compilers if you want to learn more about the more advanced or theoretical subjects. I enjoyed reading "Engineering a Compiler 2nd Edition by Keith D. Cooper (Author), Linda Torczon".
+In this article I mainly focused on practical stuff. I strongly suggest that you read textbooks on compilers if you want to learn more about the more advanced or theoretical subjects. I enjoyed reading "Engineering a Compiler 2nd Edition by Keith D. Cooper (Author), Linda Torczon".
 
 If you think there where any errors in the article, feel free to send me an email (you can find it in the index page).
 
