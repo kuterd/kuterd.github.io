@@ -145,10 +145,9 @@ def render_all(general, entries):
 ENTRIES = [
     BlogEntry(
         "Writing a very simple JIT Compiler in about 1000 lines of C",
-        "I demonstrate how you can write a simple JIT Compiler for x86 in about 1000 lines of C code.",
+        "I demonstrate how you can write a simple JIT (Just In Time) compiler for x86 in about 1000 lines of C code.",
         "writing_a_simple_compiler.md",
-        datetime.now(),
-        is_hidden=True
+        date(2023, 8, 28),
     ),
     BlogEntry(
         "V8 Bytecode Reference",

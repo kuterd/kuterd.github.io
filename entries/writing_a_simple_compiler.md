@@ -2,7 +2,9 @@
 
 Personally, I love how writing compilers requires a combination of both practical and theoretical knowledge.
 
-In this project, we will be building a JIT (Just-In-Time) compiler for a very small subset of C to gain confidence in recursive descent parsing and generating machine code programmatically. I tried to keep the compiler as basic as possible because I believe it's important to start with the simplest solution before moving on to more complex ones. Building a very simple compiler will show us some of the problems we are going to encounter with more advanced compilers.
+In this project, we will be building a JIT (Just-In-Time) compiler for a very small subset of C that I nick named __μC__ to gain confidence in recursive descent parsing and generating machine code programmatically. I tried to keep the compiler as basic as possible because I believe it's important to start with the simplest solution before moving on to more complex ones. Building a very simple compiler will show us some of the problems we are going to encounter with more advanced compilers.
+
+The full source code for the project is [here](https://github.com/kuterd/very_simple_compiler/tree/master).
 
 As a side note, I am currently building a more complicated compiler that uses the __Single Static Assignment__ form and also does proper-ish register allocation, I will try to write about some of the algorithms that I implemented when I finish it, but it still needs a lot of work.
  
@@ -35,7 +37,7 @@ We can combine most of the steps above into a single step, and skip a few of the
 
 This is it !
 
-The simplifications of our compiler (Micro C) 
+The simplifications of our compiler: 
 
 * Horribly inefficient machine code generation.
 * No types, every type is a 64-bit integer, floating point numbers and structs are not supported.
@@ -236,7 +238,7 @@ parse_add (reader) {
 }
 ```
 
-!!! note "Using what you have learned so far, you can try to create a calculator program that takes in a expression like '33 / (10 + 23)' calculates the result."
+!!! note "Using what you have learned so far, you can try to create a calculator program that takes in a expression like '33 / (10 + 23)' calculates the result. If you want, you can see the example calculator program I wrote to demonstrate the C dialect we are creating [here](https://github.com/kuterd/very_simple_compiler/blob/master/example_programs/calculator.uc)"
 
 #### Generalized operator precedence parsing and compilation
 As you might have seen, the `parse_multiply` and `parse_add` functions share too much in common, and since we will have multiple levels of operator precedences, our code would get really ugly real quick.
@@ -316,25 +318,10 @@ The `parse_atom` function parses an integer, string, or expression in parenthesi
 
 As described in the comments `compile_operator_t` is a function pointer that takes in stack positions of input values and generates assembly to do the operation, and returns the stack slot where the result value is stored. I will show the implementation of these functions later.
 
-# Allocating Executable memory
-The processor will reject to execute code located in pages that are not marked as executable, and in modern operating systems, the memory that we allocate is not marked as executable. This is a security feature to try to make it more difficult to build exploits.
-We need to ask the kernel specifically to map executable memory to our process.
-
-This is how you do it linux:
-```c
-    void* result = mmap(
-       NULL,
-       allocSize,
-       PROT_READ | PROT_WRITE | PROT_EXEC,
-       MAP_ANONYMOUS | MAP_PRIVATE,
-       -1,
-       0
-    );
-```
 
 # Encoding X86-64(Also known as IA-64 or amd64) instructions
 
-Please note that I will try to port the code to arm whenever I have time. But I wanted to start with x86.
+Please note that I will try to port the code to arm whenever I have time. But I wanted to start with x86. Follow me on [Twitter](https://twitter.com/kuterdinel) if you are interested.
 
 The x86 architecture has its in 1970s. And a modern x86 CPU can still execute a 16-bit operating system that was built in the 1980s. Being so old and so backward compatible does have some caveats. Encoding x86 instructions is kinda __difficult__ and frankly it took me a long time to understand.
 
@@ -360,7 +347,7 @@ And although we can guess that 01 means 0x01 in hex what does `/r` mean ? "/r" m
 
 Also, there seem to be 3 different instructions that use the same encoding.
 
-As I said before, a modern x86 processor can run a 16-bit operating system. Meaning that the processor has a 16-bit mode. And when you use the `01 /r` encoding the processor can interpret that as a 16-bit instruction if it's running in 16-bit mode. The 16-bit instruction is still usable in 64-bit mode however, you need to use a specific prefix, for it.
+As I said before, a modern x86 processor can run a 16-bit operating system. Meaning that the processor has a 16-bit mode. And when you use the `01 /r` encoding the processor will interpret that as a 16-bit instruction if it's running in 16-bit mode. The 16-bit instruction is still usable in 64-bit mode however, you need to use a specific prefix for it.
 
 Next, what does the `REX.W` in `REX.W + 01 /r`  mean ?
 Differently from the 16-bit mode, instructions are 32-bit by default in 64-bit mode, and we need to use the REX prefix in order to access the 64-bit mode instruction. I believe this is for backward compatibility (you can run a 32-bit program in a 64-bit mode through special compatibility mode).
@@ -491,6 +478,22 @@ void store_const_in_reg(reg64 reg, uint64_t cons) {
 
 !!! note "If you don't know which instruction to use, you can cheat a little bit and use [godbolt.com](https://godbolt.com) to compare C code to assembly."
 
+# Allocating Executable memory
+The processor will reject to execute code located in pages that are not marked as executable, and in modern operating systems, the memory that we allocate is not marked as executable unless we specifically ask for it to be. This is a security feature to try to make it more difficult to build exploits.
+We need to ask the kernel specifically to map executable memory to our process.
+
+This is how you do it linux:
+```c
+    void* result = mmap(
+       NULL,
+       allocSize,
+       PROT_READ | PROT_WRITE | PROT_EXEC,
+       MAP_ANONYMOUS | MAP_PRIVATE,
+       -1,
+       0
+    );
+```
+
 # Putting it all together
 We looked at parsing, and encoding x86 instructions now let's put everything together.
 
@@ -557,8 +560,7 @@ slot_t add_slots(slot_t slot_a, slot_t slot_b) {
 }
 ```
 
-I won't show all of the instructions as  I said before, if you are curious please check the source code.
-
+I won't show all of the instructions as I said before, if you are curious please check the source code.
 
 ## Calling functions
 
@@ -688,7 +690,8 @@ To implement the return statement we must evaluate the returned expression, move
     }
 ```
 
-__Break statments:__ 
+__Break statments:__
+To implement the `break` statement, we need to insert a jump to the position where the loops ends. 
 ```c
     test() {
         i = 100;
@@ -785,7 +788,9 @@ To implement variables, we just need to keep a map between stack slots and varia
 ```
 
 # Conclusion
-The contents in this article should be enough ammunition for you to build esoteric compilers of your own. 
+The contents in this article should be enough ammunition for you to build esoteric compilers of your own.
+
+I suggest you checkout Fabrice Bellard's [Obscured Tiny C Compiler](https://bellard.org/otcc/) which I drew some inspiration from. It can compiler it's own source code but the code itself is very difficult to understand.
 
 In this article I mainly focused on practical stuff. I strongly suggest that you read textbooks on compilers if you want to learn more about the more advanced or theoretical subjects. I enjoyed reading "Engineering a Compiler 2nd Edition by Keith D. Cooper (Author), Linda Torczon".
 
@@ -796,5 +801,5 @@ If you think there where any errors in the article, feel free to send me an emai
 * Add more language features (add else if, for loops etc) (<span style="color: green;">easy</span>).
 * Port it to other architectures (<span style="color: red;">hard</span>).
 * Instead of executing it jit, write the output into an elf file (<span style="color: yellow;">medium</span>).
-* Add support for other types, such as floating point numbers. You need to figure out how encode floating point instructions, and extend the compiler to support different variable types.  (<span style="color: yellow;">medium</span>).
+* Add support for other types, such as floating point numbers. You need to figure out how encode floating point instructions, and extend the compiler to support different variable types.  (<span style="color: red;">hard</span>/<span style="color: yellow;">medium</span>).
 * Instead of emitting assembly directly, figure out how to emit LLVM IR instead (<span style="color: yellow">medium</span>).

@@ -1,3 +1,6 @@
+
+
+let BACKGROUND_COLOR = "#323147ff"
 let NODE_RADIUS = 20;
 let NODE_CHILD_DISTANCE = 15;
 
@@ -51,7 +54,7 @@ class Node {
         ctx.arc(x, y, NODE_RADIUS + 2, 0, Math.PI * 2);
         ctx.fill();
         
-        ctx.fillStyle = "black";
+        ctx.fillStyle = BACKGROUND_COLOR;
         ctx.beginPath();
         ctx.arc(x, y, NODE_RADIUS, 0, Math.PI * 2);
         ctx.fill();
@@ -344,14 +347,14 @@ document.addEventListener("DOMContentLoaded", async function () {
     let ZOOM_DURATION = 100;
     setInterval(function () {
         // Clear the screen
-        ctx.fillStyle = "#121212";
+        ctx.fillStyle = BACKGROUND_COLOR;
         ctx.fillRect(0, 0, 500, 500);
 
         if (!animation_running) { 
             ctx.fillStyle = "white";
             ctx.textAlign = "center";
             ctx.font = "15px sans";
-            ctx.textBaseline = 'middle';
+            ctx.textBaseline = "middle";
             ctx.fillText("Click the \"Parse !\" button to replay the very cool animation !", 250, 100);
         } 
 
