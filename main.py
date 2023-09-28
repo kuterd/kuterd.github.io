@@ -37,9 +37,9 @@ class PageEntry:
 
 
 class BlogEntry(PageEntry):
-    def __init__(self, title, description, content, date, is_hidden = False):
+    def __init__(self, title, description, content, date, is_hidden = False, meta_image = None):
         super().__init__(title.lower().replace(" ", "-") + ".html", is_hidden)
-
+        self.meta_image = meta_image
         self.title = title
         self.description = description
         content_file = open(path.join(ENTRIES_FOLDER, content))
@@ -148,6 +148,7 @@ ENTRIES = [
         "I demonstrate how you can write a simple JIT (Just In Time) compiler for x86 in about 1000 lines of C code.",
         "writing_a_simple_compiler.md",
         date(2023, 8, 28),
+        meta_image="/compiler_croped.svg"
     ),
     BlogEntry(
         "V8 Bytecode Reference",
