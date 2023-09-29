@@ -110,15 +110,11 @@ __We can parse it like this:__
         size_t argCount = 0;
         argument_info_t arguments[MAX_ARGUMENTS];
         // Parse the argument list.
-        bool first_arg = true;
         while (**reader != ')') {
             // If this is the first argument, we don't expect to have a comma here since commas go between arguments.
-            if (!first_arg) {
+            if (argCount != 0 ) {
                 assert_compilation(**reader == ',');  // check the comma separation for the argument list.
                 (*reader)++;
-            } else {
-                first_arg = false;
-            }
             ...
             arguments[argCount++] = parse_arg(reader);  // Parse the name of the argument.
             ...
