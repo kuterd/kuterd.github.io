@@ -2,6 +2,12 @@
     <channel>
         <title>Kuter Dinel's blog</title>
         <item>
+            <title>Writing a very simple JIT Compiler in about 1000 lines of C</title>
+            <description>I demonstrate how you can write a simple JIT (Just In Time) compiler for x86 in about 1000 lines of C code.</description>
+            <link>writing-a-very-simple-jit-compiler-in-about-1000-lines-of-c.html</link>
+            <pubDate>Mon, 28 Aug 2023 00:00:00 </pubDate>
+        </item>
+        <item>
             <title>V8 Bytecode Reference</title>
             <description>List of V8 bytecode instructions, and their documentation/reference.</description>
             <link>v8-bytecode-reference.html</link>

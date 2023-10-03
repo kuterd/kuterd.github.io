@@ -2,7 +2,7 @@
 <html lang='en'>
 <head>
     <meta name="author" content="Kuter Dinel">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <style>
     </style>
     <link rel="stylesheet" href="highlight.css">
@@ -14,7 +14,12 @@
     <meta charset="UTF-8">
     <title>Writing a very simple JIT Compiler in about 1000 lines of C • Kuter Dinel's blog</title>
 
-    <meta name="description" content="I demonstrate how you can write a simple JIT Compiler for x86 in about 1000 lines of C code.">
+    <meta name="description" content="I demonstrate how you can write a simple JIT (Just In Time) compiler for x86 in about 1000 lines of C code.">
+    <meta property="og:type" content="article" />
+	<meta property="og:title" content="Writing a very simple JIT Compiler in about 1000 lines of C" />
+    <meta property="og:description" content="I demonstrate how you can write a simple JIT (Just In Time) compiler for x86 in about 1000 lines of C code." />
+    <meta name="twitter:creator" content="@KuterDinel" />
+    <meta property="og:image" content="/compiler_croped.png" />
     <script>
         MathJax = {
             tex: {
@@ -39,17 +44,19 @@
     <article>
     <header>
     <h1> Writing a very simple JIT Compiler in about 1000 lines of C</h1>
-    <i style="float:right;">on <strong>23.09.2023</strong> by <strong>Kuter Dinel</strong>.</i></br>
+    <i style="float:right;">on <strong>28.08.2023</strong> by <strong>Kuter Dinel</strong>.</i></br>
     </header>
     <p>
-    <p>Personally, I love how writing compilers requires a combination of both practical and theoretical knowledge.</p>
-<p>In this project we will be building a jit compiler for a very small subset of C to gain confidence in recursive descent parsing and generating machine code programmatically. I wanted to build the most basic compiler that I can. I think it is often important to build the most simplest solution to problem before developing more complicated solutions. Building the simplest compiler will show us some of the problems we are going to encounter with more advanced compilers. </p>
+    <p><img src="compiler_croped.svg" class="page-figure" style="margin: auto; display: block;" alt="Modern Compiler vs Our Compiler Diagram"/></p>
+<p>Personally, I love how writing compilers requires a combination of both practical and theoretical knowledge.</p>
+<p>In this project, we will be building a JIT (Just-In-Time) compiler for a very small subset of C that I nick named <strong>μC</strong> to gain confidence in recursive descent parsing and generating machine code programmatically. I tried to keep the compiler as basic as possible because I believe it's important to start with the simplest solution before moving on to more complex ones. Building a very simple compiler will show us some of the problems we are going to encounter with more advanced compilers.</p>
+<p>The full source code for the project is <a href="https://github.com/kuterd/very_simple_compiler/tree/master">here</a>.</p>
 <p>As a side note, I am currently building a more complicated compiler that uses the <strong>Single Static Assignment</strong> form and also does proper-ish register allocation, I will try to write about some of the algorithms that I implemented when I finish it, but it still needs a lot of work.</p>
 <div class="admonition note">
 <p class="admonition-title"><strong>Mandatory warning</strong>: If you just want to create your own programming language and don't care too much about making something from scratch, You are better of just writing a <a href="https://llvm.org/">LLVM</a> Frontend. LLVM Can generate really beautiful optimized code. Instead of the horribly inefficient machine code we will generate. The section on recursive descent parsing would still be useful for you though.</p>
 </div>
 <div class="toc"><span class="toctitle">Table of Contents</span><ul>
-<li><a href="#the-basic-anatomy-of-a-compiler">The basic anatomy of a compiler</a></li>
+<li><a href="#the-basic-anatomy-of-a-compiler-optional">The basic anatomy of a compiler (optional)</a></li>
 <li><a href="#anatomy-of-our-simple-compiler">Anatomy of our simple compiler</a></li>
 <li><a href="#tokenizationlexing">Tokenization(Lexing)</a></li>
 <li><a href="#recursive-descent-parsing">Recursive descent parsing</a><ul>
@@ -60,11 +67,11 @@
 </li>
 </ul>
 </li>
-<li><a href="#allocating-executable-memory">Allocating Executable memory</a></li>
 <li><a href="#encoding-x86-64also-known-as-ia-64-or-amd64-instructions">Encoding X86-64(Also known as IA-64 or amd64) instructions</a><ul>
 <li><a href="#what-is-modrm">What is ModRM.</a></li>
 </ul>
 </li>
+<li><a href="#allocating-executable-memory">Allocating Executable memory</a></li>
 <li><a href="#putting-it-all-together">Putting it all together</a><ul>
 <li><a href="#setting-up-and-cleaning-stack-frames">Setting up and cleaning stack frames</a></li>
 <li><a href="#implementing-binary-operators">Implementing binary operators</a></li>
@@ -83,7 +90,7 @@
 <li><a href="#things-you-can-do-to-extend-this-simple-compiler">Things you can do to extend this simple compiler</a></li>
 </ul>
 </div>
-<h2 id="the-basic-anatomy-of-a-compiler">The basic anatomy of a compiler</h2>
+<h2 id="the-basic-anatomy-of-a-compiler-optional">The basic anatomy of a compiler (optional)</h2>
 <p>We don't really have to worry about any of this, this is just to give you an idea, may be slightly inaccurate.</p>
 <ul>
 <li><strong>Tokenization &amp; Parsing</strong> (we can consider tokenization and parsing as a single step).</li>
@@ -105,16 +112,16 @@
 <li><strong>JIT execution</strong> It's easier to do jit execution instead of creating an executable file.</li>
 </ul>
 <p>This is it !</p>
-<p>The simplifications of our compiler (Micro C) </p>
+<p>The simplifications of our compiler: </p>
 <ul>
 <li>Horribly inefficient machine code generation.</li>
 <li>No types, every type is a 64-bit integer, floating point numbers and structs are not supported.</li>
-<li>Every value is stored in stack, registers are not utilized properly.</li>
-<li>No <a href="https://en.wikipedia.org/wiki/Abstract_syntax_tree">Abstract Syntax Tree</a> or <a href="https://en.wikipedia.org/wiki/Abstract_syntax_tree">Abstract Syntax Tree</a>. Code generation combined with parsing.</li>
+<li>Every value is stored in the stack, registers are not utilized properly.</li>
+<li>No <a href="https://en.wikipedia.org/wiki/Intermediate_representation">Intermediate Representation</a> or <a href="https://en.wikipedia.org/wiki/Abstract_syntax_tree">Abstract Syntax Tree</a>. Code generation combined with parsing.</li>
 </ul>
 <p>Please note that these simplifications significantly reduces the quality of the code that we generate. Modern compilers are often millions of lines of code compared to our ~1000 lines.</p>
 <h2 id="tokenizationlexing">Tokenization(Lexing)</h2>
-<p>It's  useful that we think of the code as a series of tokens. Tokens are like words. We essentially assign each token a class like; identifier, number, left parenthesis, right parenthesis, operator etc. This helps us understand the contents of code (which is just text) and makes it easier for us to parse it later.</p>
+<p>It's useful that we think of the code as a series of tokens. Tokens are like words. We essentially assign each token a class like; identifier, number, left parenthesis, right parenthesis, operator, etc. This helps us understand the contents of code (which is just text) and makes it easier for us to parse it later.</p>
 <p>Essentially tokenizer takes in text in the <strong>form of:</strong></p>
 <div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="n">asd</span><span class="w"> </span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
 
@@ -125,8 +132,8 @@
 <div class="codehilite"><pre><span></span><code>{&lt;identifier(asd)&gt;, &lt;l_paran&gt;, &lt;r_paran&gt;, &lt;l_brace&gt;, &lt;r_brace&gt; ... }
 </code></pre></div>
 
-<p>That's easier to understand than <code>{'a', 's', 'd', ' ', '(', ')', ...}</code> right ?</p>
-<p>Sometimes it may be favorable to have the tokenizer as a separate competent, especially if it involves complex logic. Since my tokenizer only needs one character to determine token type in most cases, I opted to not have a separate tokenizer and just <strong>combined tokenization and parsing</strong>. </p>
+<p>That's easier to understand than <code>{'a', 's', 'd', ' ', '(', ')', ...}</code> right ?  </p>
+<p>It makes sense to have tokenizer as a separate component if it involved complex logic. But since my tokenizer only needs one character to determine token type in most cases, I opted to not have a separate tokenizer and just <strong>combined tokenization and parsing</strong>. </p>
 <p><strong>To give an example on how we can combine tokenization and parsing:</strong> </p>
 <div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="n">parse_atom</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="kt">char</span><span class="w"> </span><span class="n">c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">**</span><span class="n">reader</span><span class="p">;</span>
@@ -147,8 +154,8 @@
 
 <p>It's as simple as that !</p>
 <h2 id="recursive-descent-parsing">Recursive descent parsing</h2>
-<p>Most modern compilers (clang, gcc, etc) doesn't use parser generators and instead use handwritten(🧿)  recursive descent parsers. I think once it "clicks" in your mind it be trivial to write any recursive descent parser you want !</p>
-<p>For example let's imagine that a function can be defined like in the example below.</p>
+<p>Most modern compilers (clang, gcc, etc) don't use parser generators and instead use handwritten(🧿)  recursive descent parsers. I think once it "clicks" in your mind it be trivial to write any recursive descent parser you want !</p>
+<p>For example, let's imagine that a function can be defined like in the example below.</p>
 <div class="codehilite"><pre><span></span><code><span class="n">asd</span><span class="w"> </span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="p">...</span>
 <span class="p">}</span>
@@ -164,15 +171,11 @@
 <span class="w">        </span><span class="kt">size_t</span><span class="w"> </span><span class="n">argCount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span>
 <span class="w">        </span><span class="n">argument_info_t</span><span class="w"> </span><span class="n">arguments</span><span class="p">[</span><span class="n">MAX_ARGUMENTS</span><span class="p">];</span>
 <span class="w">        </span><span class="c1">// Parse the argument list.</span>
-<span class="w">        </span><span class="kt">bool</span><span class="w"> </span><span class="n">first_arg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span>
 <span class="w">        </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="o">**</span><span class="n">reader</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="sc">&#39;)&#39;</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">            </span><span class="c1">// If this is the first argument, we don&#39;t expect to have a comma here since commas go between arguments.</span>
-<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">first_arg</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">argCount</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">                </span><span class="n">assert_compilation</span><span class="p">(</span><span class="o">**</span><span class="n">reader</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="sc">&#39;,&#39;</span><span class="p">);</span><span class="w">  </span><span class="c1">// check the comma separation for the argument list.</span>
 <span class="w">                </span><span class="p">(</span><span class="o">*</span><span class="n">reader</span><span class="p">)</span><span class="o">++</span><span class="p">;</span>
-<span class="w">            </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span>
-<span class="w">                </span><span class="n">first_arg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">false</span><span class="p">;</span>
-<span class="w">            </span><span class="p">}</span>
 <span class="w">            </span><span class="p">...</span>
 <span class="w">            </span><span class="n">arguments</span><span class="p">[</span><span class="n">argCount</span><span class="o">++</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">parse_arg</span><span class="p">(</span><span class="n">reader</span><span class="p">);</span><span class="w">  </span><span class="c1">// Parse the name of the argument.</span>
 <span class="w">            </span><span class="p">...</span>
@@ -209,26 +212,13 @@
         flex-direction: row;
     }
 
-    .visualization-holder {
-        margin: auto;
-        width: 500px;
-    }
-
     input {
         color: black;
     }
 
-    @media screen and (max-width: 500px) {
-        .visualization-holder {
-            width: 100% !important;
-        }
 
-        #canvas {
-            width: 100%;
-        }
-    }
 </style>
-<div class="visualization-holder">
+<div class="page-figure">
     <div id="parser-button-holder">
     <input type="text" id="expression-input" value="10 * 20 + 11 * 21 + 23 / (10 + 20)"/>
     <button id="parse-expression">Parse !</button>
@@ -242,7 +232,7 @@
 </div>
 <h4 id="simple-operator-precedence-parsing">Simple operator precedence parsing</h4>
 <p>Let's start by writing a function to only parse multiplication and division operations. Since both multiplication and division have the same precedence, we just have to ensure that it's parsed left to right.
-Also we have to consider that a number by itself is a valid expression(like "123"). Meaning that we need to be able to handle that case as well. We will return if we ever see a operator that is not the correct precedence level.</p>
+Also, we have to consider that a number by itself is a valid expression(like "123"). Meaning that we need to be able to handle that case as well. We will return if we ever see an operator that is not the correct precedence level.</p>
 <div class="codehilite"><pre><span></span><code><span class="c1">// Parse multiplication, division or just an atom value.</span>
 <span class="n">parse_multiply</span><span class="w"> </span><span class="p">(</span><span class="n">reader</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="n">left</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">parse_atom</span><span class="p">(</span><span class="n">reader</span><span class="p">);</span>
@@ -300,11 +290,11 @@ Also we have to consider that a number by itself is a valid expression(like "123
 </code></pre></div>
 
 <div class="admonition note">
-<p class="admonition-title">Using what you have learned so far, you can try to create a calculator program that takes in a expression like '33 / (10 + 23)' calculates the result.</p>
+<p class="admonition-title">Using what you have learned so far, you can try to create a calculator program that takes in a expression like '33 / (10 + 23)' calculates the result. If you want, you can see the example calculator program I wrote to demonstrate the C dialect we are creating <a href="https://github.com/kuterd/very_simple_compiler/blob/master/example_programs/calculator.uc">here</a></p>
 </div>
 <h4 id="generalized-operator-precedence-parsing-and-compilation">Generalized operator precedence parsing and compilation</h4>
 <p>As you might have seen, the <code>parse_multiply</code> and <code>parse_add</code> functions share too much in common, and since we will have multiple levels of operator precedences, our code would get really ugly real quick.
-We can generalize the binary operator parsing such that it's very easy to add new operators.</p>
+We can generalize the binary operator parsing to make it very easy to add new operators.</p>
 <div class="codehilite"><pre><span></span><code><span class="c1">// A compile operator function takes in stack positions of it&#39;s arguments and returns the stack position of it&#39;s result.</span>
 <span class="k">typedef</span><span class="w"> </span><span class="n">slot_t</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">compile_operator_t</span><span class="p">)(</span><span class="n">slot_t</span><span class="w"> </span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="n">slot_t</span><span class="w"> </span><span class="n">b</span><span class="p">);</span>
 
@@ -373,27 +363,13 @@ We can generalize the binary operator parsing such that it's very easy to add ne
 <span class="p">}</span>
 </code></pre></div>
 
-<p>The <code>parse_atom</code> function parses a int, string, expression in parenthesis. For int and string values, the <code>parse_atom</code> function emits assembly to store the constant value in stack and returns the stack position corresponding to the position where the value is stored.</p>
-<p>As described in the comments <code>compile_operator_t</code> is a function pointer that takes in stack positions of input values and generates assembly to do the operation, and returns the stack slot where the result value will be stored.</p>
-<h1 id="allocating-executable-memory">Allocating Executable memory</h1>
-<p>The processor will reject to execute code located in pages that are not marked as executable, and under normal circumstances the memory that we allocate is not marked as executable. This is a security feature to try to make it more difficult to build exploits.
-We need to ask the kernel specifically to map executable memory to our process.</p>
-<p>This is how you do it linux:</p>
-<div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mmap</span><span class="p">(</span>
-<span class="w">       </span><span class="nb">NULL</span><span class="p">,</span>
-<span class="w">       </span><span class="n">allocSize</span><span class="p">,</span>
-<span class="w">       </span><span class="n">PROT_READ</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PROT_WRITE</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PROT_EXEC</span><span class="p">,</span>
-<span class="w">       </span><span class="n">MAP_ANONYMOUS</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">MAP_PRIVATE</span><span class="p">,</span>
-<span class="w">       </span><span class="mi">-1</span><span class="p">,</span>
-<span class="w">       </span><span class="mi">0</span>
-<span class="w">    </span><span class="p">);</span>
-</code></pre></div>
-
+<p>The <code>parse_atom</code> function parses an integer, string, or expression in parenthesis. For int and string values, the <code>parse_atom</code> function emits assembly to store the constant value in the stack and returns the stack position corresponding to the position where the value is stored.</p>
+<p>As described in the comments <code>compile_operator_t</code> is a function pointer that takes in stack positions of input values and generates assembly to do the operation, and returns the stack slot where the result value is stored. I will show the implementation of these functions later.</p>
 <h1 id="encoding-x86-64also-known-as-ia-64-or-amd64-instructions">Encoding X86-64(Also known as IA-64 or amd64) instructions</h1>
-<p>Please note that I will try to port the code to arm whenever I have time. But I wanted to start with x86.</p>
-<p>The x86 architecture has it's roots to 1970's. And a modern x86 CPU can still execute an 16-bit operating system that was build in 1980's. Being so old and so backwards compatible does have some caveats. Encoding x86 instructions is kinda <strong>difficult</strong> and frankly it took me a long time to understand.</p>
-<p>Intel's <a href="https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html">Architecture Software Developer Manual</a> describes the x86 architecture in detail, including how to encode each instructions. I strongly suggest that you take a look because I won't go over how each instruction we use is encoded.</p>
-<p>Let's take a look at how to encode a simple <code>ADD</code> instruction. The <code>ADD</code> instruction is listed under  Chapter 3 of the Volume 2 of the Architecture Software Developer Manual.  We can see that there is a table.</p>
+<p>Please note that I will try to port the code to arm whenever I have time. But I wanted to start with x86. Follow me on <a href="https://twitter.com/kuterdinel">Twitter</a> if you are interested.</p>
+<p>The x86 architecture has its in 1970s. And a modern x86 CPU can still execute a 16-bit operating system that was built in the 1980s. Being so old and so backward compatible does have some caveats. Encoding x86 instructions is kinda <strong>difficult</strong> and frankly it took me a long time to understand.</p>
+<p>Intel's <a href="https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html">Architecture Software Developer Manual</a> describes the x86 architecture in detail, including how to encode each instruction. I strongly suggest that you take a look because I won't go over how each instruction we use is encoded.</p>
+<p>Let's take a look at how to encode a simple <code>ADD</code> instruction. The <code>ADD</code> instruction is listed under  Chapter 3 of Volume 2 of the Architecture Software Developer Manual.  We can see that there is a table.</p>
 <table>
 <thead>
 <tr>
@@ -433,14 +409,14 @@ We need to ask the kernel specifically to map executable memory to our process.<
 </tbody>
 </table>
 <div class="admonition note">
-<p class="admonition-title">I  suggest that you take look at Chapter 2 of Architecture Software Developer which describes the instruction format and also the first part of Chapter 3 which describes how to interpret the instruction listings.</p>
+<p class="admonition-title">I suggest that you take look at Chapter 2 of Architecture Software Developer which describes the instruction format and also the first part of Chapter 3 which describes how to interpret the instruction listings.</p>
 </div>
 <p>We are specifically interested in the <code>ADD r/m64, r64</code> variation of the instruction. <code>r/m64</code> means that one of the operands is ModRM which I will explain later. And <code>r64</code> means that the other operand is a 64-bit register.</p>
-<p>And although we can guess that 01 means 0x01 in hex what does <code>/r</code> mean, "/r" means that the second register operand is encoded as a part of the ModRM byte. </p>
-<p>Also here seems to be 3 different instructions that use the same encoding.
-As I said before, a modern x86 processor can run an 16-bit operating system. Meaning that the processor has a 16-bit mode. And when you use the <code>01 /r</code> encoding the processor can interpret that as a 16-bit instruction if it's running in 16-bit mode. The 16-bit instruction is still usable in 64-bit mode however, you need to use a specific prefix, for it.</p>
-<p>What does the <code>REX.W</code> in <code>REX.W + 01 /r</code>  mean ?
-Differently from the 16-bit mode, instructions are 32-bit by default in 64-bit mode, and we need to use the REX prefix in order to access the 64-bit mode instruction. I believe this is for backwards compatibility (you can run a 32-bit program in a 64-bit mode through special compatibility mode).</p>
+<p>And although we can guess that 01 means 0x01 in hex what does <code>/r</code> mean ? "/r" means that the second register operand is encoded as a part of the ModRM byte. </p>
+<p>Also, there seem to be 3 different instructions that use the same encoding.</p>
+<p>As I said before, a modern x86 processor can run a 16-bit operating system. Meaning that the processor has a 16-bit mode. And when you use the <code>01 /r</code> encoding the processor will interpret that as a 16-bit instruction if it's running in 16-bit mode. The 16-bit instruction is still usable in 64-bit mode however, you need to use a specific prefix for it.</p>
+<p>Next, what does the <code>REX.W</code> in <code>REX.W + 01 /r</code>  mean ?
+Differently from the 16-bit mode, instructions are 32-bit by default in 64-bit mode, and we need to use the REX prefix in order to access the 64-bit mode instruction. I believe this is for backward compatibility (you can run a 32-bit program in a 64-bit mode through special compatibility mode).</p>
 <p>The REX prefix can be encoded with the function below.</p>
 <div class="codehilite"><pre><span></span><code><span class="c1">// @W Make the addressing 64bit.</span>
 <span class="c1">// @R Extension for the ModR/M reg field.</span>
@@ -456,12 +432,12 @@ Differently from the 16-bit mode, instructions are 32-bit by default in 64-bit m
 <p>As specified in the comment, we need to give <code>1</code> to the W field to make the instruction 64-bit.</p>
 <h2 id="what-is-modrm">What is ModRM.</h2>
 <p>ModRM is what makes x86 a CISC (Complex Instruction Set Computer) architecture. ModRM allows a single opcode to have different addressing modes.
-The <code>/</code> in the <code>REX.W + 01 /r</code> means that this instruction uses the <strong>ModRM</strong> byte.</p>
+The <code>/</code> in the <code>REX.W + 01 /r</code> means that, this instruction uses the <strong>ModRM</strong> byte.</p>
 <p>The <strong>ModRM</strong> byte has 3 parts.
 * <strong>mod</strong> Specifies which addressing mode we are using.
 * <strong>regop</strong> Either register for other side or a <strong>constant value for unary operations</strong> (<code>/1</code> etc).
 * <strong>rm</strong> Register used for the addressing mode.</p>
-<p>Please note that for unary instructions the encoding will be like <code>/4</code> which means that the constant value 4 must be put inside the regop. An example of this is shown with the encoding of the <code>call r/m64</code> instruction.  </p>
+<p>Please note that for unary, instructions the encoding will be like <code>/4</code> which means that regop must be 4. An example of this is shown with the encoding of the <code>call r/m64</code> instruction.</p>
 <p>The code below encodes the <strong>ModRM</strong> byte.</p>
 <div class="codehilite"><pre><span></span><code><span class="w"> </span><span class="n">emit_modrm</span><span class="p">(</span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">mod</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">regop</span><span class="p">,</span><span class="w"> </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">rm</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="kt">uint8_t</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">mod</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">6</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="p">(</span><span class="n">regop</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="mi">3</span><span class="p">)</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">rm</span><span class="p">;</span>
@@ -481,17 +457,17 @@ The <code>/</code> in the <code>REX.W + 01 /r</code> means that this instruction
 <tr>
 <td>0</td>
 <td>[rm]</td>
-<td>Value of the memory address pointed by the register <code>rm</code></td>
+<td>Value in memory addressed by register <code>rm</code>.</td>
 </tr>
 <tr>
 <td>1</td>
 <td>[rm + disp8]</td>
-<td>Value of the memory address pointed by the register <code>rm</code> plus an offset.</td>
+<td>Value in memory addressed by, register<code>rm</code> plus an offset.</td>
 </tr>
 <tr>
 <td>2</td>
 <td>[rm + disp32]</td>
-<td>Same as above but a 32-bit offset instead of 8-bits.</td>
+<td>Same as above but a 32-bit offset instead of 8-bit.</td>
 </tr>
 <tr>
 <td>3</td>
@@ -500,7 +476,7 @@ The <code>/</code> in the <code>REX.W + 01 /r</code> means that this instruction
 </tr>
 </tbody>
 </table>
-<p>I said that <code>rm</code> is the register and <code>regop</code> is sometimes used as a register but which value corresponds to which register ? We can use the table bellow.</p>
+<p>I said before that <code>rm</code> is the register and <code>regop</code> is sometimes used as a register but which value corresponds to which register ? We can use the table bellow.</p>
 <table>
 <thead>
 <tr>
@@ -598,13 +574,13 @@ Disassembly<span class="w"> </span>of<span class="w"> </span>section<span class=
 <span class="w">   </span><span class="m">0</span>:<span class="w">   </span><span class="m">48</span><span class="w"> </span><span class="m">01</span><span class="w"> </span><span class="nb">cd</span><span class="w">                </span>add<span class="w">    </span>rcx,rdx
 </code></pre></div>
 
-<p>Yaay ! Let's try to encode <code>ADD [RCX], RDX</code> this will add RDX to the value in the address pointed in RCX.</p>
+<p>Yaay ! Let's try to encode <code>ADD [RCX], RDX</code> this will add RDX to the value in memory addressed by register <code>rm</code>.</p>
 <div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="n">emit_rex</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
 <span class="w">    </span><span class="n">push_int8</span><span class="p">(</span><span class="mh">0x01</span><span class="p">);</span><span class="w">  </span><span class="c1">// opcode for add.</span>
 <span class="w">    </span><span class="n">emit_modrm</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">RCX</span><span class="p">,</span><span class="w"> </span><span class="n">RDX</span><span class="p">);</span><span class="w"> </span><span class="c1">// mod type changed !</span>
 </code></pre></div>
 
-<p>Now let's try something a little bit more difficult, as I said before, we will be storing all values in stack. So let's try RBP (Frame pointer) relative addressing. This is the <strong>most important one</strong> because we will be primarily using this addressing mode.</p>
+<p>Now let's try something a little bit more difficult, as I said before, we will be storing all values in the stack. So let's try RBP (Frame pointer) relative addressing. This is the <strong>most important one</strong> because we will be primarily using this addressing mode.</p>
 <p><code>ADD [RBP - offset], RCX</code></p>
 <div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="n">emit_rex</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">);</span>
 <span class="w">    </span><span class="n">push_int8</span><span class="p">(</span><span class="mh">0x01</span><span class="p">);</span><span class="w">  </span><span class="c1">// opcode for add.</span>
@@ -628,10 +604,24 @@ Disassembly<span class="w"> </span>of<span class="w"> </span>section<span class=
 <div class="admonition note">
 <p class="admonition-title">If you don't know which instruction to use, you can cheat a little bit and use <a href="https://godbolt.com">godbolt.com</a> to compare C code to assembly.</p>
 </div>
+<h1 id="allocating-executable-memory">Allocating Executable memory</h1>
+<p>The processor will reject to execute code located in pages that are not marked as executable, and in modern operating systems, the memory that we allocate is not marked as executable unless we specifically ask for it to be. This is a security feature to try to make it more difficult to build exploits.
+We need to ask the kernel specifically to map executable memory to our process.</p>
+<p>This is how you do it linux:</p>
+<div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="kt">void</span><span class="o">*</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mmap</span><span class="p">(</span>
+<span class="w">       </span><span class="nb">NULL</span><span class="p">,</span>
+<span class="w">       </span><span class="n">allocSize</span><span class="p">,</span>
+<span class="w">       </span><span class="n">PROT_READ</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PROT_WRITE</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">PROT_EXEC</span><span class="p">,</span>
+<span class="w">       </span><span class="n">MAP_ANONYMOUS</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">MAP_PRIVATE</span><span class="p">,</span>
+<span class="w">       </span><span class="mi">-1</span><span class="p">,</span>
+<span class="w">       </span><span class="mi">0</span>
+<span class="w">    </span><span class="p">);</span>
+</code></pre></div>
+
 <h1 id="putting-it-all-together">Putting it all together</h1>
 <p>We looked at parsing, and encoding x86 instructions now let's put everything together.</p>
 <h2 id="setting-up-and-cleaning-stack-frames">Setting up and cleaning stack frames</h2>
-<p>When we enter a function, we must first setup the stack frame and on exit we must remove it. Since we will be keeping all values in stack we also need to allocate stack space. </p>
+<p>When we enter a function, we must first setup the stack frame and on exit we must remove it. Since we will be keeping all values in the stack we also need to allocate stack space. </p>
 <div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="nf">push</span><span class="w"> </span><span class="nb">RBP</span><span class="w"> </span><span class="c1">; Save the old stack frame.</span>
 <span class="w">    </span><span class="nf">mov</span><span class="w"> </span><span class="nb">RBP</span><span class="p">,</span><span class="w"> </span><span class="nb">RSP</span><span class="w"> </span><span class="c1">; Create a new stack frame.</span>
 <span class="w">    </span><span class="nf">sub</span><span class="w"> </span><span class="nb">RSP</span><span class="p">,</span><span class="w"> </span><span class="mh">0x16</span><span class="w"> </span><span class="c1">; Stack space we want to allocate, stack must be aligned to 16 bytes or bad things will happen. (We use sub here because the stack grows downwards).</span>
@@ -671,7 +661,7 @@ Disassembly<span class="w"> </span>of<span class="w"> </span>section<span class=
 </code></pre></div>
 
 <h2 id="implementing-binary-operators">Implementing binary operators</h2>
-<p>The <code>add_slots</code> function that was referenced in the operator table is as follows. Remember that this function will be called by <code>compile_expression_</code>. It takes in two stack offsets <code>a</code> and <code>b</code> and returns another stack offset containing the result value.</p>
+<p>The <code>add_slots</code> function that was referenced in the operator table is as follows. Remember that, this function will be called by <code>compile_expression_</code>. It takes in two stack offsets <code>a</code> and <code>b</code> and returns another stack offset containing the result value.</p>
 <div class="codehilite"><pre><span></span><code><span class="n">slot_t</span><span class="w"> </span><span class="nf">add_slots</span><span class="p">(</span><span class="n">slot_t</span><span class="w"> </span><span class="n">slot_a</span><span class="p">,</span><span class="w"> </span><span class="n">slot_t</span><span class="w"> </span><span class="n">slot_b</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="n">slot_t</span><span class="w"> </span><span class="n">result</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">copy_slot</span><span class="p">(</span><span class="n">slot_a</span><span class="p">);</span><span class="w"> </span><span class="c1">// copy the value a into a new stack slot.</span>
 <span class="w">    </span><span class="n">load_slot</span><span class="p">(</span><span class="n">slot_b</span><span class="p">,</span><span class="w"> </span><span class="n">RAX</span><span class="p">);</span><span class="w"> </span><span class="c1">// mov RAX, [rbp + slot_b]</span>
@@ -685,11 +675,11 @@ Disassembly<span class="w"> </span>of<span class="w"> </span>section<span class=
 <span class="p">}</span>
 </code></pre></div>
 
-<p>I won't show all of the instructions as  I said before, if you are curious please check the source code.</p>
+<p>I won't show all of the instructions as I said before, if you are curious please check the source code.</p>
 <h2 id="calling-functions">Calling functions</h2>
-<p>We can look at the instruction reference and find the encoding for the "call" instruction. We can see that there are several variations of the call instruction. I preferred to go with <code>CALL r/m64</code> since others work relative to the program counter position. And since we don't know where the kernel will allocate the executable memory, we don't actually know what the PC is going to be at a given position in the program. I could fix this by putting a temporary value and fixing it during linking, but I wanted to keep the linking very simple by using absolute positions. We can see that the variation we chose is encoded as <code>FF /2</code> meaning that the opcode is <code>0xFF</code> and <code>/2</code> means that there is a ModRM with the <code>regop</code> being 0x2.</p>
+<p>We can look at the instruction reference and find the encoding for the "call" instruction. We can see that there are several variations of the call instruction. I preferred to go with <code>CALL r/m64</code> since we also want to support function pointers. We can see that the variation we chose is encoded as <code>FF /2</code> meaning that the opcode is <code>0xFF</code> and <code>/2</code> means that there is a ModRM with the <code>regop</code> being 0x2.</p>
 <h3 id="finding-pointers-of-external-functions">Finding pointers of external functions</h3>
-<p>We want to be able to call LibC functions such as puts, printf, scanf etc as well as other functions from other libraries.
+<p>We want to be able to call LibC functions such as puts, printf, scanf, etc as well as other functions from other libraries.
 To find the address of an external function, we can use the <code>dlsym</code> function. For example:</p>
 <div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">dlHandle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dlopen</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">RTLD_NOW</span><span class="p">);</span>
 <span class="w">    </span><span class="kt">void</span><span class="w"> </span><span class="p">(</span><span class="o">*</span><span class="n">putsFunction</span><span class="p">)(</span><span class="kt">char</span><span class="w"> </span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dlsym</span><span class="p">(</span><span class="n">dlHandle</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;puts&quot;</span><span class="p">);</span>
@@ -698,7 +688,7 @@ To find the address of an external function, we can use the <code>dlsym</code> f
 
 <h3 id="passing-arguments">Passing arguments</h3>
 <p>We now know the address of a function, but how will we pass arguments to it ?</p>
-<p>To know where to put argument, we need to look at the calling convention. Linux uses the System V Application Binary Interface. And for X86 we need to look at <a href="https://refspecs.linuxbase.org/elf/x86_64-abi-0.99.pdf">System V Application Binary Interface AMD64 Architecture Processor Supplement</a>.</p>
+<p>To know where to put the arguments, we need to look at the calling convention. Linux uses the System V Application Binary Interface. And for X86 we need to look at <a href="https://refspecs.linuxbase.org/elf/x86_64-abi-0.99.pdf">System V Application Binary Interface AMD64 Architecture Processor Supplement</a>.</p>
 <p><strong>TLDR:</strong> For integer and pointer types we can use <strong>RDI</strong>, <strong>RSI</strong>, <strong>RDX</strong>, <strong>RCX</strong>, <strong>R8</strong>, <strong>R9</strong> in that exact order, and the result value is used in the <strong>RAX</strong> register. Since we keep everything in stack, we don't have to worry about callee and caller saved registers.</p>
 <h3 id="constructing-a-hello-world-program">Constructing a hello world program</h3>
 <p>Let's write a program that generates a function that calls the <code>puts</code> function and passes a hello world message as an argument.</p>
@@ -722,12 +712,13 @@ To find the address of an external function, we can use the <code>dlsym</code> f
 </code></pre></div>
 
 <h2 id="handling-control-flow">Handling Control flow</h2>
-<p>To compile an if block, we compile the conditional expression. compare it's value to zero, and if the value is zero we jump over the code block where the contents of the if block is located. One small problem is that we don't know the length of the code block since we haven't even parsed it yet !</p>
+<p>To compile an if block, we compile the conditional expression, compare it's value to zero, and if the value is zero we jump over the code block where the contents of the if block is located. One small problem is that we don't know the length of the code block since we haven't even parsed it yet !</p>
 <p>What we can do instead is temporary emit zero, and fill in the value later.</p>
 <div class="codehilite"><pre><span></span><code><span class="c1">// Return value is a pointer to the relative offset in the emitted code.</span>
 <span class="kt">uint32_t</span><span class="o">*</span><span class="w"> </span><span class="nf">jump_zero_offset</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
 <span class="w">    </span><span class="n">push_int8</span><span class="p">(</span><span class="mh">0x0f</span><span class="p">);</span><span class="w"> </span><span class="c1">// JZ rel32</span>
 <span class="w">    </span><span class="n">push_int8</span><span class="p">(</span><span class="mh">0x84</span><span class="p">);</span>
+<span class="w">    </span><span class="c1">//NOTE: jump_offset_point is relative to the position after the end of the jz instruction.</span>
 <span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="o">*</span><span class="n">jump_offset_point</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="kt">uint32_t</span><span class="o">*</span><span class="p">)(</span><span class="n">result_buffer</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">result_size</span><span class="p">);</span>
 <span class="w">    </span><span class="n">push_int32</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span><span class="w"> </span><span class="c1">// will be replaced later.</span>
 <span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">jump_offset_point</span><span class="p">;</span>
@@ -760,9 +751,9 @@ To find the address of an external function, we can use the <code>dlsym</code> f
 <span class="p">}</span>
 </code></pre></div>
 
-<p>Handling a while loop is just the same, except that you have a jmp to the point where you evaluate the condition</p>
+<p>Handling a while loop is just the same, except that you have a jmp to the point where you evaluate the condition.</p>
 <h2 id="static-linking">Static Linking</h2>
-<p>When handling the compilation of an if block we had to fill in the value of <code>jump_offset_point</code> later because we didn't knew it's offset yet. This is called a forwards reference. In this particular case since there is only one reference to the unknown address we just used a pointer. But there are cases where there could be arbitrary number of references to unknown positions in our program. </p>
+<p>When handling the compilation of an if block we had to fill in the value of <code>jump_offset_point</code> later because we didn't know it's offset yet. This is called a forward reference. In this particular case since there is only one reference to the unknown address we just used a pointer. But there are cases where there could be arbitrary number of references to unknown positions in our program. </p>
 <p>To give examples:</p>
 <p><strong>Forward declarations of local functions:</strong></p>
 <div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="c1">// this is how we do forwards declarations btw.</span>
@@ -789,7 +780,8 @@ To implement the return statement we must evaluate the returned expression, move
 <span class="w">    </span><span class="p">}</span>
 </code></pre></div>
 
-<p><strong>Break statments:</strong> </p>
+<p><strong>Break statments:</strong>
+To implement the <code>break</code> statement, we need to insert a jump to the position where the loops ends. </p>
 <div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="n">test</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">100</span><span class="p">;</span>
 <span class="w">        </span><span class="k">while</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
@@ -801,7 +793,7 @@ To implement the return statement we must evaluate the returned expression, move
 <span class="w">    </span><span class="p">}</span>
 </code></pre></div>
 
-<p>Since there could be arbitrary number of references, we can't get away with a simple pointer this time. We need to keep a list of references to a particular unknown value, this is called a relocation list. At the end of compilation we go over the list of relocations and fill in the real values.</p>
+<p>Since there could be an arbitrary number of references, we can't get away with a simple pointer this time. We need to keep a list of references to a particular unknown value, this is called a relocation list. At the end of compilation, we go over the list of relocations and fill in the real values.</p>
 <div class="codehilite"><pre><span></span><code><span class="c1">// local variable or symbol.</span>
 <span class="k">typedef</span><span class="w"> </span><span class="k">struct</span><span class="w">  </span><span class="p">{</span>
 <span class="w">    </span><span class="kt">char</span><span class="w"> </span><span class="n">name</span><span class="p">[</span><span class="n">MAX_VAR_NAME_LENGTH</span><span class="p">];</span>
@@ -846,7 +838,7 @@ To implement the return statement we must evaluate the returned expression, move
 </code></pre></div>
 
 <h2 id="variable-handling">Variable Handling</h2>
-<p>I think implementing variables are simple. We just need to keep a map between a stack slot and variable name. And in the <code>compile_atom</code> function, if we see a variable, we just have to look it up in the variables array.</p>
+<p>To implement variables, we just need to keep a map between stack slots and variable names. In the <code>compile_atom</code> function, to compile a variable, we just have to look it up in the variables array.</p>
 <div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="n">compile_exp_atom_</span><span class="p">(</span><span class="n">current</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
 <span class="w">        </span><span class="p">...</span>
 <span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">isalpha</span><span class="p">(</span><span class="n">c</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="c1">// identifier.</span>
@@ -879,22 +871,23 @@ To implement the return statement we must evaluate the returned expression, move
 </code></pre></div>
 
 <h1 id="conclusion">Conclusion</h1>
-<p>I think the contents in this article should be enough ammunition for you to build esoteric compilers of your own. </p>
-<p>In this article I mainly focused on practical stuff and I strongly suggest that you read text books on compilers if you want to learn more about the more advanced or theoretical subjects. I enjoyed reading "Engineering a Compiler 2nd Edition by Keith D. Cooper (Author), Linda Torczon".</p>
+<p>The contents in this article should be enough ammunition for you to build esoteric compilers of your own.</p>
+<p>I suggest you checkout Fabrice Bellard's <a href="https://bellard.org/otcc/">Obscured Tiny C Compiler</a> which I drew some inspiration from. It can compiler it's own source code but the code itself is very difficult to understand.</p>
+<p>In this article I mainly focused on practical stuff. I strongly suggest that you read textbooks on compilers if you want to learn more about the more advanced or theoretical subjects. I enjoyed reading "Engineering a Compiler 2nd Edition by Keith D. Cooper (Author), Linda Torczon".</p>
 <p>If you think there where any errors in the article, feel free to send me an email (you can find it in the index page).</p>
 <h1 id="things-you-can-do-to-extend-this-simple-compiler">Things you can do to extend this simple compiler</h1>
 <ul>
 <li>Add more language features (add else if, for loops etc) (<span style="color: green;">easy</span>).</li>
 <li>Port it to other architectures (<span style="color: red;">hard</span>).</li>
 <li>Instead of executing it jit, write the output into an elf file (<span style="color: yellow;">medium</span>).</li>
-<li>Add support for other types, such as floating point numbers. You need to figure out how encode floating point instructions, and extend the compiler to support different variable types.  (<span style="color: yellow;">medium</span>).</li>
+<li>Add support for other types, such as floating point numbers. You need to figure out how encode floating point instructions, and extend the compiler to support different variable types.  (<span style="color: red;">hard</span>/<span style="color: yellow;">medium</span>).</li>
 <li>Instead of emitting assembly directly, figure out how to emit LLVM IR instead (<span style="color: yellow">medium</span>).</li>
 </ul>
     </p>
     </article>
         </main>
         <footer id='footer'>
-                <span>Kuter Dinel 2023 | Last Updated: 23-09-2023 | Blog Commit Hash: 4c7c3ac </span>
+                <span>Kuter Dinel 2023 | Last Updated: 03-10-2023 | Blog Commit Hash: 06d6567 </span>
         </footer>
     </div>
 </body>
