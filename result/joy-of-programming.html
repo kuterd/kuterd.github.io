@@ -2,7 +2,7 @@
 <html lang='en'>
 <head>
     <meta name="author" content="Kuter Dinel">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1,user-scalable=no">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <style>
     </style>
     <link rel="stylesheet" href="highlight.css">
@@ -15,6 +15,10 @@
     <title>Joy of programming • Kuter Dinel's blog</title>
 
     <meta name="description" content="Becoming a professional & Joy that programming brings">
+    <meta property="og:type" content="article" />
+	<meta property="og:title" content="Joy of programming" />
+    <meta property="og:description" content="Becoming a professional & Joy that programming brings" />
+    <meta name="twitter:creator" content="@KuterDinel" />
     <script>
         MathJax = {
             tex: {
@@ -55,21 +59,10 @@
         background-color: #F0F0F0;
     }
 
-    @media screen and (max-width: 500px) {
-        .visualization-holder {
-            width: 100% !important;
-        }
-
-        #canvas {
-            width: 100%;
-        }
-    }
-
-
 </style>
 
 <script src="orbit.js"></script>
-<div class="visualization-holder" style="margin: auto; display: block; width:500px;">
+<div class="visualization-holder page-figure">
     <canvas id="canvas">Your browser sadly doesn't support canvas elements, sob sob</canvas>
     <p>
         <button onclick="load_k_scene()">Load 'K'</button>
@@ -102,7 +95,7 @@ The direction of the force for both objects is towards each other.</p>
     </article>
         </main>
         <footer id='footer'>
-                <span>Kuter Dinel 2023 | Last Updated: 23-09-2023 | Blog Commit Hash: 4c7c3ac </span>
+                <span>Kuter Dinel 2023 | Last Updated: 03-10-2023 | Blog Commit Hash: 06d6567 </span>
         </footer>
     </div>
 </body>
