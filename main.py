@@ -140,9 +140,14 @@ def render_all(general, entries):
     # Render misc.
     render_page_multilang("404.html", "404.html", general, DEFAULT_LANGUAGE)
 
-
-# ------Add-your-blog-posts-here------
 ENTRIES = [
+    BlogEntry(
+        "My Projects",
+        "Showcase of some of my projects",
+        "projects.md",
+        date(2023, 11, 15),
+        is_hidden = True,
+    ), 
     BlogEntry(
         "Writing a very simple JIT Compiler in about 1000 lines of C",
         "I demonstrate how you can write a simple JIT (Just In Time) compiler for x86 in about 1000 lines of C code.",
