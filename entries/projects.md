@@ -19,7 +19,12 @@ SSA Based compiler targeting x86_64. Implemented all the data structures from sc
 <img src="ir_example.png" width="300px" alt="IR Example">
 
 ## Programming Language in Turkish Syntax. ~2018
-A simple programming Turkish language closer to Turkish syntax. Created in few weeks for sleepless coding for a high school competition, was rejected.
+A simple programming language closer to Turkish syntax, meant to be easier to be understood by native Turkish speakers. 
+
+* `(condition) ise {}` means if (condition) {}`
+* `(condition) iken {}` to create a for loop.
+
+Created in few weeks of sleepless coding for a high school competition, was rejected.
 It's a simple recursive evaluator.
 
 Eventually led me to get into LLVM, which led me to get an internship at Google !
@@ -52,7 +57,7 @@ This was a toolbox app for the android operating system. Had various kinds of to
 
 It was mostly being used by people who wanted to cheat in games. 
 
-<img src="images/devbox.jpg" width="300px" alt="Developer's Toolbox screenshot">
+<img src="images/developer_s_toolbox_latest.webp" width="300px" alt="Developer's Toolbox screenshot">
 
 ## Gravity Platform (Java, LibJDX, Box2D)
 Gravity Platform (also know as Gravity.exe) is a platformer game where platform orientation changes perspective and gravity. I worked on this project in 2016-2017. I used custom GLSL Shaders to create the ripple effect when the ball touches a platform.
