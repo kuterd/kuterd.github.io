@@ -142,6 +142,12 @@ def render_all(general, entries):
 
 ENTRIES = [
     BlogEntry(
+        "Python Bytecode and AST Explorer",
+        "A Python Bytecode and AST explorer, Similar to Godbolt Compiler Explorer but for Python.",
+        "python-explorer.md",
+        date(2024, 1, 24)
+    ), 
+    BlogEntry(
         "My Projects",
         "Showcase of some of my projects",
         "projects.md",
