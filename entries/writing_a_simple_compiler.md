@@ -8,12 +8,11 @@ The full source code for the project is [here](https://github.com/kuterd/very_si
 
 As a side note, I am currently building a more complicated compiler that uses the __Single Static Assignment__ form and also does proper-ish register allocation, I will try to write about some of the algorithms that I implemented when I finish it, but it still needs a lot of work.
  
-!!! note "__Mandatory warning__: If you just want to create your own programming language and don't care too much about making something from scratch, You are better of just writing a [LLVM](https://llvm.org/) Frontend. LLVM Can generate really beautiful optimized code. Instead of the horribly inefficient machine code we will generate. The section on recursive descent parsing would still be useful for you though."
+!!! note "__Mandatory warning__: If you just want to create your own programming language and don't care too much about making something from scratch, You are better off just writing a [LLVM](https://llvm.org/) Frontend. LLVM Can generate really beautifully optimized machine code. Instead of the horribly inefficient machine code we will generate. The section on recursive descent parsing would still be useful for you though."
 
 [TOC]
 
 ## The basic anatomy of a compiler (optional)
-
 We don't really have to worry about any of this, this is just to give you an idea, may be slightly inaccurate.
 
 * __Tokenization & Parsing__ (we can consider tokenization and parsing as a single step).
@@ -44,13 +43,13 @@ The simplifications of our compiler:
 * Every value is stored in the stack, registers are not utilized properly.
 * No [Intermediate Representation](https://en.wikipedia.org/wiki/Intermediate_representation) or [Abstract Syntax Tree](https://en.wikipedia.org/wiki/Abstract_syntax_tree). Code generation combined with parsing.
 
-Please note that these simplifications significantly reduces the quality of the code that we generate. Modern compilers are often millions of lines of code compared to our ~1000 lines.
+Modern compilers are often millions of lines of code compared to our ~1000 lines.
 
 ## Tokenization(Lexing)
 
 It's useful that we think of the code as a series of tokens. Tokens are like words. We essentially assign each token a class like; identifier, number, left parenthesis, right parenthesis, operator, etc. This helps us understand the contents of code (which is just text) and makes it easier for us to parse it later.
 
-Essentially tokenizer takes in text in the __form of:__
+Essentially the tokenizer takes in text in the __form of:__
 ```c
     asd () {
 
@@ -62,7 +61,6 @@ __And outputs:__
 {<identifier(asd)>, <l_paran>, <r_paran>, <l_brace>, <r_brace> ... }
 ```
 That's easier to understand than `{'a', 's', 'd', ' ', '(', ')', ...}` right ?  
-
 
 It makes sense to have tokenizer as a separate component if it involved complex logic. But since my tokenizer only needs one character to determine token type in most cases, I opted to not have a separate tokenizer and just __combined tokenization and parsing__. 
 
@@ -88,9 +86,9 @@ It's as simple as that !
 
 ## Recursive descent parsing
 
-Most modern compilers (clang, gcc, etc) don't use parser generators and instead use handwritten(🧿)  recursive descent parsers. I think once it "clicks" in your mind it be trivial to write any recursive descent parser you want !
+Most modern compilers (clang, gcc, etc) don't use parser generators and instead use handwritten(🧿)  recursive descent parsers. I think once it "clicks" in your mind it be trivial to write any recursive descent parser you want!
 
-For example, let's imagine that a function can be defined like in the example below.
+For example, let's imagine that a function can be defined like this in our language: 
 
 ```C
 asd (a, b) {
@@ -173,7 +171,7 @@ I think the most of difficult part of parsing is to get operator precedence pars
 
 #### Simple operator precedence parsing
 
-Let's start by writing a function to only parse multiplication and division operations. Since both multiplication and division have the same precedence, we just have to ensure that it's parsed left to right.
+Let's start by writing a function to only parse multiplication and division operations. Since both multiplication and division have the same precedence, we just have to parse it from left to right.
 Also, we have to consider that a number by itself is a valid expression(like "123"). Meaning that we need to be able to handle that case as well. We will return if we ever see an operator that is not the correct precedence level.
 
 ```C
@@ -233,6 +231,7 @@ parse_add (reader) {
     return left;
 }
 ```
+
 
 !!! note "Using what you have learned so far, you can try to create a calculator program that takes in a expression like '33 / (10 + 23)' calculates the result. If you want, you can see the example calculator program I wrote to demonstrate the C dialect we are creating [here](https://github.com/kuterd/very_simple_compiler/blob/master/example_programs/calculator.uc)"
 
@@ -317,9 +316,9 @@ As described in the comments `compile_operator_t` is a function pointer that tak
 
 # Encoding X86-64(Also known as IA-64 or amd64) instructions
 
-Please note that I will try to port the code to arm whenever I have time. But I wanted to start with x86. Follow me on [Twitter](https://twitter.com/kuterdinel) if you are interested.
+Please note that I will try to port the code to arm whenever I have time, but I wanted to start with x86. Follow me on [Twitter](https://twitter.com/kuterdinel) if you are interested.
 
-The x86 architecture has its in 1970s. And a modern x86 CPU can still execute a 16-bit operating system that was built in the 1980s. Being so old and so backward compatible does have some caveats. Encoding x86 instructions is kinda __difficult__ and frankly it took me a long time to understand.
+The x86 architecture has its roots in 1970s, and a modern x86 CPU can still execute a 16-bit operating system that was built in the 1980s. Being so old and so backward compatible does have some caveats. Encoding x86 instructions is kinda __difficult__ and frankly it took me a long time to understand.
 
 Intel's [Architecture Software Developer Manual](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html) describes the x86 architecture in detail, including how to encode each instruction. I strongly suggest that you take a look because I won't go over how each instruction we use is encoded.
 
@@ -373,7 +372,7 @@ The __ModRM__ byte has 3 parts.
 * __regop__ Either register for other side or a __constant value for unary operations__ (`/1` etc).
 * __rm__ Register used for the addressing mode.
 
-Please note that for unary, instructions the encoding will be like `/4` which means that regop must be 4. An example of this is shown with the encoding of the `call r/m64` instruction.
+Please note that for unary instructions the encoding will be like `/4` which means that regop must be 4. An example of this is shown with the encoding of the `call r/m64` instruction.
 
 The code below encodes the __ModRM__ byte.
 ```c
@@ -407,10 +406,9 @@ I said before that `rm` is the register and `regop` is sometimes used as a regis
  ...       | ...  | 
  R15       | 15   | 
 
-!!! note "__Important Note:__ For encoding registers R8-R15 you must use the REX R and B fields. The reason we have to do this is because the registers R8 to R15 were added with the 64-bit mode. And the encodings are same between 64 and 32 bit modes due to compatibility reasons."
+!!! note "__Important Note:__ For encoding registers R8-R15 you must use the REX prefix R and B fields. The reason we have to do this is because the registers R8 to R15 were added with the 64-bit mode. And the instruction encodings are same for 64 and 32 bit modes due to compatibility reasons."
 
-From know on I will assume that the registers are defined in a enum.
-Now let's put it all together and try to encode `ADD RCX, RDX`
+From now on, I will assume that the registers are defined in a enum. Let's put it all together and try to encode `ADD RCX, RDX`
 
 ```c
     emit_rex(1, 0, 0, 0);
@@ -446,7 +444,7 @@ Yaay ! Let's try to encode `ADD [RCX], RDX` this will add RDX to the value in me
     emit_modrm(0, RCX, RDX); // mod type changed !
 ```
 
-Now let's try something a little bit more difficult, as I said before, we will be storing all values in the stack. So let's try RBP (Frame pointer) relative addressing. This is the __most important one__ because we will be primarily using this addressing mode.
+Now let's try something a little bit more difficult, as I said before, we will be storing every variable in the stack. So let's try RBP (Frame pointer) relative addressing. This is the __most important one__ because we will be primarily using this addressing mode.
 
 `ADD [RBP - offset], RCX`
 
@@ -457,7 +455,7 @@ Now let's try something a little bit more difficult, as I said before, we will b
     push_int32(-offset);
 ```
 
-Most instructions does not accept 64-bit constant values. We can use the `MOVABS reg64, imm64` instruction to load a 64 bit value to a register and then use that register.
+Most instructions only accept 32-bit constant values as operands, to use 64-bit constant values, we can use the `MOVABS reg64, imm64` instruction to load the value to a register. 
 
 ```c
 // Store a constant value in a register.
@@ -472,10 +470,11 @@ void store_const_in_reg(reg64 reg, uint64_t cons) {
 }
 ```
 
+
 !!! note "If you don't know which instruction to use, you can cheat a little bit and use [godbolt.com](https://godbolt.com) to compare C code to assembly."
 
 # Allocating Executable memory
-The processor will reject to execute code located in pages that are not marked as executable, and in modern operating systems, the memory that we allocate is not marked as executable unless we specifically ask for it to be. This is a security feature to try to make it more difficult to build exploits.
+The processor will reject to execute code located in pages that are not marked as executable, and in modern operating systems, allocated memory is not marked as executable unless we specifically ask for it to be. This is a security feature to try to make it more difficult to build exploits.
 We need to ask the kernel specifically to map executable memory to our process.
 
 This is how you do it linux:
@@ -556,7 +555,7 @@ slot_t add_slots(slot_t slot_a, slot_t slot_b) {
 }
 ```
 
-I won't show all of the instructions as I said before, if you are curious please check the source code.
+I won't show the code to encode all instructions, you can check the source code.
 
 ## Calling functions
 
@@ -786,7 +785,7 @@ To implement variables, we just need to keep a map between stack slots and varia
 # Conclusion
 The contents in this article should be enough ammunition for you to build esoteric compilers of your own.
 
-I suggest you checkout Fabrice Bellard's [Obscured Tiny C Compiler](https://bellard.org/otcc/) which I drew some inspiration from. It can compiler it's own source code but the code itself is very difficult to understand.
+I suggest you checkout Fabrice Bellard's [Obscured Tiny C Compiler](https://bellard.org/otcc/) which I drew some inspiration from. It can compile it's own source code but the code itself is very difficult to understand.
 
 In this article I mainly focused on practical stuff. I strongly suggest that you read textbooks on compilers if you want to learn more about the more advanced or theoretical subjects. I enjoyed reading "Engineering a Compiler 2nd Edition by Keith D. Cooper (Author), Linda Torczon".
 
