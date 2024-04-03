@@ -1,6 +1,6 @@
 <img src="compiler_croped.svg" class="page-figure" style="margin: auto; display: block;" alt="Modern Compiler vs Our Compiler Diagram"/>
 
-Personally, I love how writing compilers requires a combination of both practical and theoretical knowledge.
+Personally, I love how working on compilers requires a combination of both practical and theoretical knowledge.
 
 In this project, we will be building a JIT (Just-In-Time) compiler for a very small subset of C that I nick named __μC__ to gain confidence in recursive descent parsing and generating machine code programmatically. I tried to keep the compiler as basic as possible because I believe it's important to start with the simplest solution before moving on to more complex ones. Building a very simple compiler will show us some of the problems we are going to encounter with more advanced compilers.
 
@@ -60,20 +60,20 @@ __And outputs:__
 ```
 {<identifier(asd)>, <l_paran>, <r_paran>, <l_brace>, <r_brace> ... }
 ```
-That's easier to understand than `{'a', 's', 'd', ' ', '(', ')', ...}` right ?  
+That's easier to understand than `{'a', 's', 'd', ' ', '(', ')', ...}` right?  
 
-It makes sense to have tokenizer as a separate component if it involved complex logic. But since my tokenizer only needs one character to determine token type in most cases, I opted to not have a separate tokenizer and just __combined tokenization and parsing__. 
+It makes sense to have tokenizer as a separate component if it involves complex logic. But since my tokenizer only needs one character to determine token type in most cases, I opted to not have a separate tokenizer and just __combined tokenization and parsing__. 
 
 __To give an example on how we can combine tokenization and parsing:__ 
 ```C
     parse_atom(reader) {
         char c = **reader;
 
-        if (c >= '0' && c <= '9') { // is this a number token ?
+        if (c >= '0' && c <= '9') { // is this a number token?
             uint64_t number = read_int(reader);
             // Materialize the constant number.
             ...
-        } else if (c == '"') { // is this a string token ? 
+        } else if (c == '"') { // is this a string token? 
             char *string = parse_string(reader);
             // Materialize the string pointer as a constant.
             ...
@@ -123,7 +123,7 @@ __We can parse it like this:__
 
     }
 ```
-Well, that was simple enough right ? If not, keep in mind that you can go over the finished code with a debugger, I am sure that will help. 
+Well, that was simple enough right? If not, keep in mind that you can go over the finished code with a debugger, I am sure that will help. 
 
 ### Operator Precedence Parsing (and very cool parsing animation demo)
 I think the most of difficult part of parsing is to get operator precedence parsing right.
@@ -171,9 +171,9 @@ I think the most of difficult part of parsing is to get operator precedence pars
 
 #### Simple operator precedence parsing
 
-Let's start by writing a function to only parse multiplication and division operations. Since both multiplication and division have the same precedence, we just have to parse it from left to right.
-Also, we have to consider that a number by itself is a valid expression(like "123"). Meaning that we need to be able to handle that case as well. We will return if we ever see an operator that is not the correct precedence level.
+Let's start by writing a function to only parse multiplication and division operations. Since both multiplication and division have the same precedence, we just have to parse it from left to right. We will return if we ever see an operator that is not the correct precedence level.
 
+Also, we have to consider that a number by itself is a valid expression(like "123"), we need to be able to handle that case as well.
 ```C
 // Parse multiplication, division or just an atom value.
 parse_multiply (reader) {
@@ -334,18 +334,18 @@ Let's take a look at how to encode a simple `ADD` instruction. The `ADD` instruc
  REX.W + 01 /r      | ADD r/m64, r64    
  ...                | ...               
 
-!!! note "I suggest that you take look at Chapter 2 of Architecture Software Developer which describes the instruction format and also the first part of Chapter 3 which describes how to interpret the instruction listings."
+!!! note "I suggest that you take look at Chapter 2 of Architecture Software Developer Manual which describes the instruction format and also the first part of Chapter 3 which describes how to interpret the instruction listings."
 
 We are specifically interested in the `ADD r/m64, r64` variation of the instruction. `r/m64` means that one of the operands is ModRM which I will explain later. And `r64` means that the other operand is a 64-bit register.
 
-And although we can guess that 01 means 0x01 in hex what does `/r` mean ? "/r" means that the second register operand is encoded as a part of the ModRM byte. 
+And although we can guess that 01 means 0x01 in hex what does `/r` mean? "/r" means that the second register operand is encoded as a part of the ModRM byte. 
 
 Also, there seem to be 3 different instructions that use the same encoding.
 
-As I said before, a modern x86 processor can run a 16-bit operating system. Meaning that the processor has a 16-bit mode. And when you use the `01 /r` encoding the processor will interpret that as a 16-bit instruction if it's running in 16-bit mode. The 16-bit instruction is still usable in 64-bit mode however, you need to use a specific prefix for it.
+As I said before, a modern x86 processor can run a 16-bit operating system. Meaning that the processor has a 16-bit mode. And when you use the `01 /r` encoding the processor will interpret that as a 16-bit instruction if it's running in 16-bit mode. The 16-bit version is still usable in 64-bit mode however, you need to use a specific prefix for it.
 
-Next, what does the `REX.W` in `REX.W + 01 /r`  mean ?
-Differently from the 16-bit mode, instructions are 32-bit by default in 64-bit mode, and we need to use the REX prefix in order to access the 64-bit mode instruction. I believe this is for backward compatibility (you can run a 32-bit program in a 64-bit mode through special compatibility mode).
+Next, what does the `REX.W` in `REX.W + 01 /r`  mean?
+Differently from the 16-bit mode, instructions are 32-bit by default in 64-bit mode, and we need to use the REX prefix in order to access the 64-bit data type version of the instruction. I believe this is for backward compatibility (you can run a 32-bit program in a 64-bit mode through special compatibility mode).
 
 The REX prefix can be encoded with the function below.
 
@@ -389,7 +389,7 @@ The code below encodes the __ModRM__ byte.
   2  | [rm + disp32]  | Same as above but a 32-bit offset instead of 8-bit.
   3  | rm             | Just value in the register. 
 
-I said before that `rm` is the register and `regop` is sometimes used as a register but which value corresponds to which register ? We can use the table bellow.
+I said before that `rm` is the register and `regop` is sometimes used as a register but which value corresponds to which register? We can use the table bellow.
 
  Register  | Code | Notes 
 -----------|------|-------
@@ -574,7 +574,7 @@ To find the address of an external function, we can use the `dlsym` function. Fo
 
 
 ### Passing arguments
-We now know the address of a function, but how will we pass arguments to it ?
+We now know the address of a function, but how will we pass arguments to it?
 
 To know where to put the arguments, we need to look at the calling convention. Linux uses the System V Application Binary Interface. And for X86 we need to look at [System V Application Binary Interface AMD64 Architecture Processor Supplement](https://refspecs.linuxbase.org/elf/x86_64-abi-0.99.pdf).
 
@@ -762,7 +762,7 @@ To implement variables, we just need to keep a map between stack slots and varia
             if (var)
                 return var->slot;
 
-            // is this is a function pointer reference ?
+            // is this is a function pointer reference?
             sym_t *global_sym = resolve_sym(global_syms, global_sym_count, ident_buffer);
             if (global_sym) {
                 mov_reg_global(RAX, global_sym);
