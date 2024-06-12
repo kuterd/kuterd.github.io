@@ -16,7 +16,6 @@
 {% endblock %}
 
 {% block center %}
-        <img id="profile-picture" alt="Profile picture" width="200px" height="200px" src="profile.jpg"/>
         <div id="entry-tree">
         <ul>
             {% if active_languages.length != 0 %}
@@ -59,7 +58,7 @@
                     </li>
                 </ul>
             {% endif %}
-            
+
             <li>{{ local.blog_entries }}</li>
             <ul>
                 {% for item in entries if not item.is_hidden %}
@@ -80,7 +79,7 @@
                     <ul class="no-bullet">
                         <li>{{item.description}}</li>
                     </ul>
-                {% endif %} 
+                {% endif %}
                 {% endfor %}
                  </li>
             </ul>
