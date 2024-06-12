@@ -142,18 +142,25 @@ def render_all(general, entries):
 
 ENTRIES = [
     BlogEntry(
+        "Nvidia SASS Control Code Viewer",
+        "A viewer for Nvidia SASS instruction control codes (pipeline stall, read/write barriers, reuse flags).",
+        "nvidia_control_code.md",
+        date(2024, 6, 12)
+    ),
+
+    BlogEntry(
         "Python Bytecode and AST Explorer",
-        "A Python Bytecode and AST explorer, Similar to Godbolt Compiler Explorer but for Python.",
+        "A Python Bytecode and AST explorer, similar to Godbolt Compiler Explorer but for Python.",
         "python-explorer.md",
         date(2024, 1, 24)
-    ), 
+    ),
     BlogEntry(
         "My Projects",
         "Showcase of some of my projects",
         "projects.md",
         date(2023, 11, 15),
         is_hidden = True,
-    ), 
+    ),
     BlogEntry(
         "Writing a very simple JIT Compiler in about 1000 lines of C",
         "I demonstrate how you can write a simple JIT (Just In Time) compiler for x86 in about 1000 lines of C code.",

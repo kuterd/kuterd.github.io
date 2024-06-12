@@ -117,8 +117,9 @@
     }
 </style>
 
-Paste your cuobjdump SASS output to the left and the table in the right will update automatically. Make sure the disassembly has the raw byte sequence in comments `/* 0x... */`. For more info on NVIDIA control codes please read [Dissecting the NVIDIA Volta GPU Architecture via Microbenchmarking](https://arxiv.org/abs/1804.06826), [Optimizing batched winograd convolution on GPUs](https://www.cse.ust.hk/~weiwa/papers/yan-ppopp20.pdf) and [NervenaSystems MaxAs wiki Control-Codes page](https://github.com/NervanaSystems/maxas/wiki/Control-Codes)
+Paste your cuobjdump SASS output to the left and the table in the right will update automatically. Make sure the disassembly has the raw byte sequence in comments `/* 0x... */`.
 
+For more info on NVIDIA control codes, please read; [Dissecting the NVIDIA Volta GPU Architecture via Microbenchmarking](https://arxiv.org/abs/1804.06826), [Optimizing batched winograd convolution on GPUs](https://www.cse.ust.hk/~weiwa/papers/yan-ppopp20.pdf) and [NervenaSystems MaxAs wiki Control-Codes page](https://github.com/NervanaSystems/maxas/wiki/Control-Codes)
 
 <div id="modal-container">
     <div id="editor">
