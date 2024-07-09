@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta name="author" content="Kuter Dinel">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <style>
+    </style>
+    <link rel="stylesheet" href="highlight.css">
+    <link rel="stylesheet" href="style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <title>My Projects • Kuter Dinel's blog</title>
+
+    <meta name="description" content="Showcase of some of my projects">
+    <meta property="og:type" content="article" />
+	<meta property="og:title" content="My Projects" />
+    <meta property="og:description" content="Showcase of some of my projects" />
+    <meta name="twitter:creator" content="@KuterDinel" />
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>   
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+</head>
+<body>
+    <div id='center'>
+        <div id="header">
+                <h2 style="display:inline;margin:0"><a href="index.html" style="color:white">Kuter Dinel's blog</a></h2>
+    <a href="index.html" class="highlight" id="back-button">&crarr; Go back</a>
+        </div>
+        <main id="center-content">
+    <article>
+    <header>
+    <h1> My Projects</h1>
+    <i style="float:right;">on <strong>15.11.2023</strong> by <strong>Kuter Dinel</strong>.</i></br>
+    </header>
+    <p>
+    <p>Some interesting projects I made over the years.</p>
+<h2 id="very-simple-compiler-for-making-a-tutorial">Very simple Compiler for making a tutorial.</h2>
+<p>Wrote a very simple compiler for writing a tutorial about it. Also made an interactive visualization of recursive descent parsing.
+The tutorial is <a href="https://kuterdinel.com/writing-a-very-simple-jit-compiler-in-about-1000-lines-of-c.html">here</a>.</p>
+<h2 id="hp-omen-led-controller-kernel-module-c">HP Omen Led Controller Kernel Module (C)</h2>
+<p>I reverse engineered HP's control software that was written for Windows and implemented it as a kernel module in Linux. </p>
+<p>This kernel module exposes a multi color led device for each of the 4 keyboard zones. Some parts(wmi query function) are taken from hp-wmi driver.</p>
+<p>Project Link is <a href="https://github.com/kuterd/hp_omen_led_controler">here</a>.</p>
+<h2 id="mcompiler-c-in-progress">MCompiler (C) (In progress)</h2>
+<p>SSA Based compiler targeting x86_64. Implemented all the data structures from scratch. Implemented dominator tree construction, SSA conversion etc.</p>
+<p><strong>Here is an example to its IR:</strong></p>
+<p><img src="ir_example.png" width="300px" alt="IR Example"></p>
+<h2 id="programming-language-in-turkish-syntax-2018">Programming Language in Turkish Syntax. ~2018</h2>
+<p>A simple programming language closer to Turkish syntax, meant to be easier to be understood by native Turkish speakers. </p>
+<ul>
+<li><code>(condition) ise {}</code> means if (condition) {}`</li>
+<li><code>(condition) iken {}</code> to create a for loop.</li>
+</ul>
+<p>Created in few weeks of sleepless coding for a high school competition, was rejected.
+It's a simple recursive evaluator.</p>
+<p>Eventually led me to get into LLVM, which led me to get an internship at Google !</p>
+<p><strong>A simple TDYUP program :</strong></p>
+<div class="codehilite"><pre><span></span><code><span class="nx">fonksiyon</span><span class="w"> </span><span class="nx">ana</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="mf">1</span><span class="w"> </span><span class="nx">iken</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nx">ham_yazdır</span><span class="p">(</span><span class="s2">&quot;How many fibonacci numbers do you want to print ? (max 30): &quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="nx">fib_sayı</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">sayı</span><span class="p">(</span><span class="nx">girdi</span><span class="p">())</span>
+
+<span class="w">        </span><span class="nx">fib_sayı</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">30</span><span class="w"> </span><span class="nx">ise</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="nx">yazdır</span><span class="p">(</span><span class="s2">&quot;Maximum 30 numbers !!!&quot;</span><span class="p">)</span><span class="w">        </span>
+<span class="w">            </span><span class="nx">devam</span>
+<span class="w">        </span><span class="p">}</span>
+
+<span class="w">        </span><span class="nx">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1</span><span class="w"> </span><span class="nx">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0</span><span class="w"> </span><span class="nx">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0</span>
+<span class="w">        </span><span class="p">(</span><span class="nx">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="nx">fib_sayı</span><span class="p">)</span><span class="w"> </span><span class="nx">iken</span><span class="w"> </span><span class="p">{</span><span class="w">       </span>
+<span class="w">            </span><span class="nx">yazdır</span><span class="p">(</span><span class="nx">metin</span><span class="p">(</span><span class="nx">a</span><span class="p">))</span>
+<span class="w">            </span><span class="nx">a</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="nx">b</span>
+<span class="w">            </span><span class="nx">b</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">a</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nx">b</span>
+<span class="w">            </span><span class="nx">i</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="mf">1</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<h2 id="developers-toolbox-java-2017">Developer's Toolbox (Java) 2017</h2>
+<p>This was a toolbox app for the android operating system. Had various kinds of tools, some utilizing the root access on Android devices. XDA Developers <a href="https://www.xda-developers.com/developers-toolbox-root-nonroot-tools/">wrote an article about it </a>. Reached 10k downloads at some point.</p>
+<p>It was mostly being used by people who wanted to cheat in games. </p>
+<p><img src="images/developer_s_toolbox_latest.webp" width="300px" alt="Developer's Toolbox screenshot"></p>
+<h2 id="gravity-platform-java-libjdx-box2d">Gravity Platform (Java, LibJDX, Box2D)</h2>
+<p>Gravity Platform (also know as Gravity.exe) is a platformer game where platform orientation changes perspective and gravity. I worked on this project in 2016-2017. I used custom GLSL Shaders to create the ripple effect when the ball touches a platform.</p>
+<video width="600" controls>
+  <source src="videos/gravity-platform.webm" type="video/webm">
+</video>
+
+<h2 id="magnet-multiplayer-js-protobuf">Magnet Multiplayer (JS, Protobuf)</h2>
+<p>Multiplayer Browser Game using WebSockets &amp; Protocol Buffers
+Experimented with code sharing between server and client.</p>
+<video width="600" controls>
+  <source src="videos/magnet-demo.webm" type="video/webm">
+</video>
+
+<h2 id="mesele-social-php-mysql-js-2015-2014">Mesele Social (PHP, MySQL, JS) ~2015-2014</h2>
+<p>Reddit and EksiSozluk(Very old Turkish social media site) mix (Yes, I watched <a href="https://www.imdb.com/title/tt1285016/">The Social Network</a>)
+I also wrote a JS library that is kinda similar to JQuery but it wasn't as browser compatible.</p>
+<h2 id="bear-kill-horizontal-floppy-bird-that-shoots-flame-java-libgdx-2015-2014">Bear Kill (Horizontal Floppy Bird that shoots flame) (Java, LibGDX) ~2015-2014</h2>
+<video width="600" controls>
+  <source src="videos/BearKillDemo.webm" type="video/webm">
+</video>
+
+<h2 id="my-own-minecraft-clone-java-lwjgl-opengl30-2014">My own Minecraft clone (Java, LWJGL, OpenGL3.0) ~2014</h2>
+<p>Source code sadly lost (broken hard drive). Custom OpenGL render (Very inefficient).
+I remember that it took me few weeks to find a bug in my renderer, it was a problem with my matrix multiplication function (I was overriding the matrix that I was multiplying with).</p>
+    </p>
+    </article>
+        </main>
+        <footer id='footer'>
+                <span>Kuter Dinel 2024 | Last Updated: 09-07-2024 | Blog Commit Hash: e440026 </span>
+        </footer>
+    </div>
+</body>

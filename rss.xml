@@ -2,6 +2,18 @@
     <channel>
         <title>Kuter Dinel's blog</title>
         <item>
+            <title>Nvidia SASS Control Code Viewer</title>
+            <description>A viewer for Nvidia SASS instruction control codes (pipeline stall, read/write barriers, reuse flags).</description>
+            <link>nvidia-sass-control-code-viewer.html</link>
+            <pubDate>Wed, 12 Jun 2024 00:00:00 </pubDate>
+        </item>
+        <item>
+            <title>Python Bytecode and AST Explorer</title>
+            <description>A Python Bytecode and AST explorer, similar to Godbolt Compiler Explorer but for Python.</description>
+            <link>python-bytecode-and-ast-explorer.html</link>
+            <pubDate>Wed, 24 Jan 2024 00:00:00 </pubDate>
+        </item>
+        <item>
             <title>Writing a very simple JIT Compiler in about 1000 lines of C</title>
             <description>I demonstrate how you can write a simple JIT (Just In Time) compiler for x86 in about 1000 lines of C code.</description>
             <link>writing-a-very-simple-jit-compiler-in-about-1000-lines-of-c.html</link>
