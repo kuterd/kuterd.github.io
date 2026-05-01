@@ -26,6 +26,7 @@
     <meta property="og:type" content="article" />
 	<meta property="og:title" content="Writing a very simple JIT Compiler in about 1000 lines of C" />
     <meta property="og:description" content="I demonstrate how you can write a simple JIT (Just In Time) compiler for x86 in about 1000 lines of C code." />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:creator" content="@KuterDinel" />
     <meta property="og:image" content="/compiler_croped.png" />
     <meta name="twitter:image" content="/compiler_croped.png"/>
@@ -39,7 +40,6 @@
             }
         };
     </script>   
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
 </head>
@@ -55,7 +55,7 @@
     <h1> Writing a very simple JIT Compiler in about 1000 lines of C</h1>
     <i style="float:right;">on <strong>28.08.2023</strong> by <strong>Kuter Dinel</strong>.</i></br>
     </header>
-    <p>
+    <div>
     <p><img src="compiler_croped.svg" class="page-figure" style="margin: auto; display: block;" alt="Modern Compiler vs Our Compiler Diagram"/></p>
 <p>Personally, I love how working on compilers requires a combination of both practical and theoretical knowledge.</p>
 <p>In this project, we will be building a JIT (Just-In-Time) compiler for a very small subset of C that I nick named <strong>μC</strong> to gain confidence in recursive descent parsing and generating machine code programmatically. I tried to keep the compiler as basic as possible because I believe it's important to start with the simplest solution before moving on to more complex ones. Building a very simple compiler will show us some of the problems we are going to encounter with more advanced compilers.</p>
@@ -891,11 +891,11 @@ To implement the <code>break</code> statement, we need to insert a jump to the p
 <li>Add support for other types, such as floating point numbers. You need to figure out how encode floating point instructions, and extend the compiler to support different variable types.  (<span style="color: red;">hard</span>/<span style="color: yellow;">medium</span>).</li>
 <li>Instead of emitting assembly directly, figure out how to emit LLVM IR instead (<span style="color: yellow">medium</span>).</li>
 </ul>
-    </p>
+    </div>
     </article>
         </main>
         <footer id='footer'>
-                <span>Kuter Dinel 2025 | Last Updated: 20-01-2025 | Blog Commit Hash: 7afebc7 </span>
+                <span>Kuter Dinel 2026 | Last Updated: 30-04-2026 | Blog Commit Hash: 068439b </span>
         </footer>
     </div>
 </body>

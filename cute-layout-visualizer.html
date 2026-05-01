@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta name="author" content="Kuter Dinel">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <style>
+    </style>
+    <link rel="stylesheet" href="highlight.css">
+    <link rel="stylesheet" href="style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7BCXXHYNCD"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-7BCXXHYNCD');
+    </script>
+    <title>CuTe Layout Visualizer • Kuter Dinel's blog</title>
+
+    <meta name="description" content="Tool for visualizing CuTe layouts in the browser.">
+    <meta property="og:type" content="article" />
+	<meta property="og:title" content="CuTe Layout Visualizer" />
+    <meta property="og:description" content="Tool for visualizing CuTe layouts in the browser." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:creator" content="@KuterDinel" />
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>   
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+</head>
+<body>
+    <div id='center'>
+        <div id="header">
+                <h2 style="display:inline;margin:0"><a href="index.html" style="color:white">Kuter Dinel's blog</a></h2>
+    <a href="index.html" class="highlight" id="back-button">&crarr; Go back</a>
+        </div>
+        <main id="center-content">
+    <article>
+    <header>
+    <h1> CuTe Layout Visualizer</h1>
+    <i style="float:right;">on <strong>24.09.2025</strong> by <strong>Kuter Dinel</strong>.</i></br>
+    </header>
+    <div>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.28.3/full/pyodide.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
+<script>
+    let pyodide = null;
+    let pycute = null;
+    let globals = null;
+
+    function visualize_layout_2d(canvas_id, layout) {
+        console.log("Visualizing layout.")
+        get_color = (i,j) => 'lightgrey';
+
+        let canvas = document.getElementById(canvas_id);
+        let ctx = canvas.getContext('2d');
+        let width = canvas.width;
+        let height = canvas.height;
+
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = 'white';
+
+        if (layout.shape.toJs().length != 2) {
+            console.error("Only 2D layouts are supported in this visualization.");
+            return;
+        }
+
+        let vars = pyodide.toPy({ l: layout })
+        let M = pyodide.runPython('pycute.Layout(l.shape[0]).size()', {"locals": vars, "globals": globals});
+        let N = pyodide.runPython('pycute.Layout(l.shape[1]).size()', {"locals": vars, "globals": globals});
+
+        // determine a cell size based on canvas size and layout dimensions
+        let cell_size = Math.min(width / N, height / M, 60)
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = `${cell_size / 4}px Arial`;
+        let offset_x = (width - N * cell_size) / 2;
+        let offset_y = (height - M * cell_size) / 2;
+
+        for (let i = 0; i < M; i++) {
+            for (let j = 0; j < N; j++) {
+                let cell_value = layout(i, j);
+                ctx.fillStyle = get_color([i,j]);
+                ctx.fillRect(offset_x + j * cell_size, offset_y + i * cell_size, cell_size, cell_size);
+                ctx.strokeStyle = 'black';
+                ctx.strokeRect(offset_x + j * cell_size, offset_y + i * cell_size, cell_size, cell_size);
+
+                ctx.fillStyle = 'black';
+                ctx.fillText(cell_value, offset_x + (j + 0.5) * cell_size, offset_y + (i + 0.5) * cell_size);
+            }
+        }
+    }
+    /*
+        auto [M, N] = product_each(shape(tile_mn));
+        Tensor filled = make_tensor<bool>(make_shape(M, N));
+        clear(filled);
+
+        // Layout
+        for (int tid = 0; tid < size<0>(layout_tv); ++tid) {
+            for (int vid = 0; vid < size<1>(layout_tv); ++vid) {
+            auto [m, n] = layout_tv(tid, vid);
+            if (not filled(m, n)) {
+                filled(m, n) = true;
+                printf("\\node[fill=%s] at (%d,%d) {\\shortstack{T%d \\\\ V%d}};\n",
+                        color(tid, vid),
+                        int(m), int(n),
+                        tid, vid);
+            }
+            }
+        }
+        // Grid
+        printf("\\draw[color=black,thick,shift={(-0.5,-0.5)}] (0,0) grid (%d,%d);\n\n", int(M), int(N));
+        // Labels
+        for (int m = 0, n = -1; m < M; ++m) {
+            printf("\\node at (%d,%d) {\\Large{\\texttt{%d}}};\n", m, n, m);
+        }
+        for (int n = 0, m = -1; n < N; ++n) {
+            printf("\\node at (%d,%d) {\\Large{\\texttt{%d}}};\n", m, n, n);
+        }
+    */
+
+    function visualize_layout_tv(canvas_id, layout_tv, tile_mn) {
+        let vars = pyodide.toPy({ l: tile_mn})
+        let M = pyodide.runPython('pycute.Layout(l.shape[0]).size()', {"locals": vars, "globals": globals});
+        let N = pyodide.runPython('pycute.Layout(l.shape[1]).size()', {"locals": vars, "globals": globals});
+
+        let vars = pyodide.toPy({ l: layout_tv})
+        let tid = pyodide.runPython('pycute.Layout(l.shape[0]).size()', {"locals": vars, "globals": globals});
+        let vid = pyodide.runPython('pycute.Layout(l.shape[1]).size()', {"locals": vars, "globals": globals});
+
+
+
+    }
+
+    async function main() {
+        setStatus("Loading Pyodide...");
+        pyodide = await loadPyodide();
+        setStatus("Loading pycute...");
+        await loadPycute();
+        setStatus("Ready!");
+    }
+
+    const package_files = {
+        "__init__.py": "https://raw.githubusercontent.com/NVIDIA/cutlass/refs/heads/main/python/pycute/__init__.py",
+        "typing.py": "https://raw.githubusercontent.com/NVIDIA/cutlass/refs/heads/main/python/pycute/typing.py",
+        "layout.py": "https://raw.githubusercontent.com/NVIDIA/cutlass/refs/heads/main/python/pycute/layout.py",
+        "swizzle.py": "https://raw.githubusercontent.com/NVIDIA/cutlass/refs/heads/main/python/pycute/swizzle.py",
+        "int_tuple.py": "https://raw.githubusercontent.com/NVIDIA/cutlass/refs/heads/main/python/pycute/int_tuple.py",
+    };
+
+    function setStatus(text) {
+        let canvas = document.getElementById("layout_viz");
+        let ctx = canvas.getContext('2d');
+        ctx.font = "50px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = "white";
+        ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+    }
+
+    async function fetchPackageFiles() {
+        const sources = {};
+        const fetchPromises = [];
+
+        for (const [filename, url] of Object.entries(package_files)) {
+            fetchPromises.push(
+                fetch(url)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`Failed to fetch ${filename}: ${response.status}`);
+                        }
+                        return response.text();
+                    })
+                    .then(content => {
+                        sources[filename] = content;
+                        console.log(`Fetched ${filename} (${content.length} chars)`);
+                    })
+                    .catch(error => {
+                        console.log(`Error fetching ${filename}: ${error.message}`);
+                        throw error;
+                    })
+                );
+            }
+
+            await Promise.all(fetchPromises);
+            return sources;
+        }
+
+    async function loadPycute() {
+        const sources = await fetchPackageFiles();
+        pyodide.runPython(`
+import sys
+import types
+
+# Package configuration
+PACKAGE_NAME = "pycute"
+package_sources = ${JSON.stringify(sources)}
+
+package_module = types.ModuleType(PACKAGE_NAME)
+package_module.__path__ = []  # Required for it to be treated as a package
+package_module.__file__ = f"{PACKAGE_NAME}/__init__.py"
+sys.modules[PACKAGE_NAME] = package_module
+
+for filename in package_sources.keys():
+    if filename == "__init__.py":
+        continue
+
+    module_name = f"{PACKAGE_NAME}.{filename.replace('.py', '')}"
+    module = types.ModuleType(module_name)
+    module.__file__ = f"{PACKAGE_NAME}/{filename}"
+    sys.modules[module_name] = module
+    print(f"Created module: {module_name}")
+
+execution_order = ["typing.py", "int_tuple.py", "layout.py", "swizzle.py", "__init__.py"]
+
+for filename in execution_order:
+    if filename not in package_sources:
+        continue
+
+    source_code = package_sources[filename]
+
+    if filename == "__init__.py":
+        # The __init__.py runs inside the main package module
+        module_to_populate = sys.modules[PACKAGE_NAME]
+        module_name = PACKAGE_NAME
+    else:
+        # Other files run inside their own submodule
+        module_name = f"{PACKAGE_NAME}.{filename.replace('.py', '')}"
+        module_to_populate = sys.modules[module_name]
+
+    # Set the package context for the execution
+    module_to_populate.__package__ = PACKAGE_NAME
+    module_to_populate.__name__ = module_name
+
+    print(f"Executing {filename} in context of {module_name}")
+
+    try:
+        exec(source_code, module_to_populate.__dict__)
+    except Exception as e:
+        print(f"Error executing {filename}: {e}")
+        import traceback
+        traceback.print_exc()
+
+def bw_color_map(coord):
+    global layout
+    idx = layout(*coord)
+    shades =  ["#FFFFFF", "#999999", "#CCCCCC", "#666666","#E6E6E6", "#808080","#B3B3B3","#4D4D4D"]
+    return shades[idx % len(shades)]
+
+def tv_color_map(coord):
+    color_map = ["#AFAFFF","#AFFFAF","#FFFFAF","#FFAFAF","#D2D2FF","#D2FFD2","#FFFFD2","#FFD2D2"]
+    return color_map[coord[0] % 8]
+
+def split_layout_shape(layout):
+    return pycute.Layout(layout.shape[0]), pycute.Layout(layout.shape[1])
+
+import pycute
+`);
+    globals = pyodide.globals;
+    pycute = pyodide.pyimport("pycute");
+    }
+
+</script>
+<script>
+            document.addEventListener("DOMContentLoaded", async () => {
+                let canvas_id = "layout_viz";
+
+                let load_future = main();
+
+                const editor = ace.edit("editor");
+                editor.setTheme("ace/theme/monokai");
+                editor.session.setMode("ace/mode/python");
+                editor.setValue(`
+# Will auto update on change
+layout = pycute.Layout(((2,2),4), ((1,2), 8))
+visualize2d(layout)
+                `, -1);
+                let update = async () => {
+                    await load_future
+                    const code = editor.getValue();
+                    try {
+                        pyodide.globals.set("visualize2d", visualize_layout_2d.bind(null, canvas_id));
+                        await pyodide.runPython(code);
+                    } catch (error) {
+                        console.error("Error executing Python code:", error);
+                    }
+                } 
+                editor.session.on('change', update);
+
+                update();
+            });
+</script>
+
+<canvas id="layout_viz" width="800" height="500"></canvas>
+<div id="editor" style="width: 800px; height: 200px; border: 1px solid #ccc;"></div>
+    </div>
+    </article>
+        </main>
+        <footer id='footer'>
+                <span>Kuter Dinel 2026 | Last Updated: 30-04-2026 | Blog Commit Hash: 068439b </span>
+        </footer>
+    </div>
+</body>

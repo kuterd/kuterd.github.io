@@ -1,4 +1,4 @@
-* {
+*, body {
     color:white;
 }
 a {
@@ -7,10 +7,10 @@ a {
 
 
 html, body {
-    background-color: #121212 !important; 
+    background-color: #121212;
     background-size: cover;
     font-family: Roboto, sans-serif;
-    line-height: 1.3em;
+    line-height: 1.5;
     margin:0;
     height:100%;
 }
@@ -43,7 +43,7 @@ body {
 #footer {
     width: 100%;
     position: absolute;
-    bottom: 2px;
+    bottom: 0;
     font-size: 13px;
 }
 
